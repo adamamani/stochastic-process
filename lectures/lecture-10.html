@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 10 — Stochastic Processes</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .three-col {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.2rem;
+    margin: 1.5rem 0;
+  }
+  @media (max-width: 720px) { .three-col { grid-template-columns: 1fr; } }
+
+  .checklist li { margin-bottom: 0.7rem; }
+
+  .lec-nav-l10 {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1rem 1.4rem;
+    margin: 2.5rem auto 1rem; max-width: 960px;
+    flex-wrap: wrap; gap: 1rem;
+  }
+  .lec-nav-l10 a {
+    color: var(--accent2); text-decoration: none;
+    font-size: 0.9rem; font-family: monospace;
+    padding: 0.45rem 1rem; border-radius: 7px;
+    border: 1px solid rgba(95,196,240,0.3); transition: all 0.2s;
+  }
+  .lec-nav-l10 a:hover { background: rgba(95,196,240,0.12); }
+  .lec-nav-l10 .nav-title { color: var(--muted); font-size: 0.8rem; font-family: monospace; letter-spacing: 2px; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="label">S403 · Stochastic Processes</div>
+  <h1>Lecture 10: Poisson Process Transformations</h1>
+  <p class="subtitle">Superposition, thinning, conditioning on counts, and compound processes</p>
+  <div class="meta">
+    <span>📖 Chapter 2 (Essentials of SP)</span>
+    <span>🎯 Undergraduate Data Science</span>
+    <span>⏱ ~60 min read</span>
+  </div>
+</header>
+
+<!-- NAVIGATION -->
+<nav>
+  <span class="nav-label">Jump to:</span>
+  <a href="#roadmap">Overview</a>
+  <a href="#recall">Recall</a>
+  <a href="#superposition">Superposition</a>
+  <a href="#thinning">Thinning</a>
+  <a href="#conditioning">Conditioning</a>
+  <a href="#compound">Compound</a>
+  <a href="#examples">Examples</a>
+  <a href="#pitfalls">Pitfalls</a>
+  <a href="#summary">Summary</a>
+  <a href="lecture-09.html" style="margin-left:auto; background:rgba(95,196,240,0.12); color:var(--accent2); border:1px solid rgba(95,196,240,0.3); border-radius:6px;">← Lecture 9</a>
+</nav>
+
+<!-- ════════════════════════════════════════ -->
+<div class="container">
+
+<!-- ─── SECTION 0: ROADMAP ─── -->
+<section id="roadmap">
+  <h2><span class="num">0</span> What This Lecture Is About</h2>
+
+  <p>Lecture 10 takes the basic Poisson process and asks: <em>what happens when we combine processes, randomly keep only some events, label events by type, or attach random jump sizes to arrivals?</em> These are the most useful transformations in the theory.</p>
+
+  <div class="three-col">
+    <div class="def-box">
+      <div class="def-title">Superposition</div>
+      <p>Combine several independent Poisson processes into one bigger process.</p>
+    </div>
+    <div class="def-box">
+      <div class="def-title">Thinning</div>
+      <p>Take one Poisson process and independently keep each arrival with some probability.</p>
+    </div>
+    <div class="def-box">
+      <div class="def-title">Compound Poisson</div>
+      <p>At each arrival time, add a random amount instead of adding 1.</p>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <div class="note-label">Main Theme</div>
+    <p>Poisson processes are amazingly stable under natural operations. If you merge them or split them in the right way, you often get another Poisson process.</p>
+  </div>
+</section>
+
+<!-- ─── SECTION 1: RECALL ─── -->
+<section id="recall">
+  <h2><span class="num">1</span> Quick Recall: Poisson Process Basics</h2>
+
+  <div class="def-box">
+    <div class="def-title">Definition (Poisson Process)</div>
+    <p>A counting process \(\{N(t) : t \ge 0\}\) is a <strong>Poisson process with rate \(\lambda > 0\)</strong> if:</p>
+    <ul>
+      <li>\(N(0) = 0\)</li>
+      <li>it has <strong>independent increments</strong></li>
+      <li>for any interval of length \(t\), the number of arrivals is Poisson with mean \(\lambda t\):</li>
+    </ul>
+    <div class="math-line">
+      \[ P\bigl(N(t)=n\bigr) = e^{-\lambda t}\frac{(\lambda t)^n}{n!}, \qquad n = 0, 1, 2, \ldots \]
+    </div>
+  </div>
+
+  <p>This means \(N(t)\) counts random arrivals over time: customers, emails, machine failures, particles detected, and so on.</p>
+
+  <div class="two-col">
+    <div class="def-box">
+      <div class="def-title">Small-Interval Picture</div>
+      <p>Over a tiny time interval of length \(h\):</p>
+      <div class="math-line">\[ P(\text{one arrival in }[t,t+h]) = \lambda h + o(h) \]</div>
+      <div class="math-line">\[ P(\text{two or more arrivals}) = o(h) \]</div>
+      <p>This is the idea used in many proofs.</p>
+    </div>
+    <div class="def-box">
+      <div class="def-title">Interarrival Times</div>
+      <p>If \(T_1, T_2, \ldots\) are the waiting times between consecutive arrivals, then:</p>
+      <div class="math-line">\[ T_i \stackrel{\text{i.i.d.}}{\sim} \operatorname{Exp}(\lambda) \]</div>
+      <p>So the Poisson process can be viewed by counting arrivals <em>or</em> by adding exponential waiting times.</p>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <div class="note-label">💡 Mental Model</div>
+    <p><strong>Poisson process = random arrival stream with constant average rate and no memory.</strong></p>
+  </div>
+</section>
+
+<!-- ─── SECTION 2: SUPERPOSITION ─── -->
+<section id="superposition">
+  <h2><span class="num">2</span> Superposition of Poisson Processes</h2>
+
+  <div class="def-box">
+    <div class="def-title">Superposition Theorem</div>
+    <p>Suppose \(N_1(t), N_2(t), \ldots, N_k(t)\) are independent Poisson processes with rates \(\lambda_1, \lambda_2, \ldots, \lambda_k\). Define</p>
+    <div class="math-line">\[ N(t) = N_1(t) + N_2(t) + \cdots + N_k(t). \]</div>
+    <p>Then \(N(t)\) is itself a Poisson process with rate</p>
+    <div class="math-line">\[ \lambda = \lambda_1 + \lambda_2 + \cdots + \lambda_k. \]</div>
+  </div>
+
+  <h3>Why This Is True</h3>
+  <p>If two independent sources each create random arrivals, the combined stream has the total average rate. What is remarkable is that the combined process is <em>exactly</em> Poisson, not just approximately.</p>
+
+  <div class="two-col">
+    <div class="def-box">
+      <div class="def-title">Proof via Generating Functions</div>
+      <p>For a fixed time \(t\), each \(N_i(t)\) is \(\text{Poisson}(\lambda_i t)\). Since the counts are independent, their probability generating functions multiply:</p>
+      <div class="math-line">
+        \[ \mathbb{E}\!\left[s^{N(t)}\right]
+          = \prod_{i=1}^k \mathbb{E}\!\left[s^{N_i(t)}\right]
+          = \prod_{i=1}^k e^{\lambda_i t(s-1)}
+          = \exp\!\left\{\!\left(\sum_{i=1}^k \lambda_i\right)\!t(s-1)\right\} \]
+      </div>
+      <p>This is the pgf of Poisson with mean \(\bigl(\sum_i \lambda_i\bigr)t\).</p>
+    </div>
+    <div class="def-box">
+      <div class="def-title">Small-Interval Proof Idea</div>
+      <p>On a tiny interval \([t, t+h]\):</p>
+      <ul>
+        <li>Process \(i\) contributes one arrival with probability \(\approx \lambda_i h\)</li>
+        <li>Two or more arrivals is \(o(h)\)</li>
+      </ul>
+      <p>So the merged process has</p>
+      <div class="math-line">\[ P(\text{one arrival}) \approx (\lambda_1 + \cdots + \lambda_k)\,h, \]</div>
+      <p>exactly the Poisson small-interval rule for rate \(\sum_i \lambda_i\).</p>
+    </div>
+  </div>
+
+  <h3>Diagram: Merging Two Streams</h3>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 900 240" xmlns="http://www.w3.org/2000/svg" style="max-width:100%">
+      <defs>
+        <marker id="arrowL10" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#5fc4f0"/>
+        </marker>
+      </defs>
+      <text x="40" y="52" font-size="18" fill="#e8eaf6" font-weight="700">Independent Poisson streams</text>
+      <line x1="80" y1="95" x2="580" y2="95" stroke="#7c6af7" stroke-width="4"/>
+      <line x1="80" y1="150" x2="580" y2="150" stroke="#5fe6a0" stroke-width="4"/>
+      <text x="30" y="100" font-size="16" fill="#7c6af7">N₁</text>
+      <text x="30" y="155" font-size="16" fill="#5fe6a0">N₂</text>
+      <circle cx="140" cy="95" r="8" fill="#7c6af7"/>
+      <circle cx="230" cy="95" r="8" fill="#7c6af7"/>
+      <circle cx="390" cy="95" r="8" fill="#7c6af7"/>
+      <circle cx="170" cy="150" r="8" fill="#5fe6a0"/>
+      <circle cx="320" cy="150" r="8" fill="#5fe6a0"/>
+      <circle cx="510" cy="150" r="8" fill="#5fe6a0"/>
+      <line x1="620" y1="122" x2="755" y2="122" stroke="#5fc4f0" stroke-width="4" marker-end="url(#arrowL10)"/>
+      <line x1="755" y1="60" x2="755" y2="182" stroke="#5fc4f0" stroke-width="2.5"/>
+      <line x1="775" y1="122" x2="870" y2="122" stroke="#5fc4f0" stroke-width="4"/>
+      <circle cx="792" cy="122" r="8" fill="#5fc4f0"/>
+      <circle cx="810" cy="122" r="8" fill="#5fc4f0"/>
+      <circle cx="828" cy="122" r="8" fill="#5fc4f0"/>
+      <circle cx="846" cy="122" r="8" fill="#5fc4f0"/>
+      <circle cx="862" cy="122" r="8" fill="#5fc4f0"/>
+      <text x="628" y="46" font-size="16" fill="#5fc4f0" font-weight="700">Merged process N</text>
+      <text x="615" y="210" font-size="14" fill="#9095b8">Rate becomes λ₁ + λ₂</text>
+    </svg>
+    <div class="diagram-caption">Merging independent Poisson streams produces a Poisson process with the total rate.</div>
+  </div>
+
+  <div class="example-box">
+    <div class="ex-label">Example: Help-Desk Calls</div>
+    <p>Calls arrive from students at rate 4 per hour and from staff at rate 3 per hour, independently. The total incoming calls form a Poisson process with rate 7 per hour.</p>
+    <div class="chalkboard">
+      <div class="math-line">\[ P(N(1) = 5) = e^{-7}\frac{7^5}{5!} \approx 0.1277 \]</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── SECTION 3: THINNING ─── -->
+<section id="thinning">
+  <h2><span class="num">3</span> Thinning (Splitting) a Poisson Process</h2>
+
+  <div class="def-box">
+    <div class="def-title">Setup</div>
+    <p>Start with a Poisson process \(N(t)\) of rate \(\lambda\). For each arrival, independently label it:</p>
+    <ul>
+      <li><strong>Type A</strong> with probability \(p\)</li>
+      <li><strong>Type B</strong> with probability \(1-p\)</li>
+    </ul>
+    <p>Let \(N_A(t)\) and \(N_B(t)\) count the two kinds of arrivals by time \(t\).</p>
+  </div>
+
+  <div class="def-box">
+    <div class="def-title">Thinning Theorem</div>
+    <p>\(N_A(t)\) is a Poisson process with rate \(p\lambda\) and \(N_B(t)\) is a Poisson process with rate \((1-p)\lambda\). Moreover, these two thinned processes are <strong>independent</strong>.</p>
+  </div>
+
+  <h3>Intuition</h3>
+  <p>If arrivals come in at average rate \(\lambda\), and each independently survives with probability \(p\), the surviving stream should have average rate \(p\lambda\). The remarkable part is that the surviving process is still exactly Poisson.</p>
+
+  <div class="two-col">
+    <div class="def-box">
+      <div class="def-title">Count Argument</div>
+      <p>Condition on the total count by time \(t\):</p>
+      <div class="math-line">\[ N_A(t) \mid N(t) = n \;\sim\; \operatorname{Binomial}(n, p). \]</div>
+      <p>Mix over the Poisson distribution of \(N(t)\) and the result becomes \(\text{Poisson}(p\lambda t)\).</p>
+    </div>
+    <div class="def-box">
+      <div class="def-title">Small-Interval Viewpoint</div>
+      <p>In a tiny interval of length \(h\):</p>
+      <div class="math-line">\[ P(\text{one A-arrival}) \approx p\lambda h, \]</div>
+      <div class="math-line">\[ P(\text{two or more A-arrivals}) = o(h). \]</div>
+      <p>That is exactly the Poisson rule with rate \(p\lambda\).</p>
+    </div>
+  </div>
+
+  <h3>Diagram: Thinning</h3>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 920 300" xmlns="http://www.w3.org/2000/svg" style="max-width:100%">
+      <text x="40" y="50" font-size="20" fill="#e8eaf6" font-weight="700">Each arrival is independently kept or rejected</text>
+      <line x1="90" y1="105" x2="830" y2="105" stroke="#5fc4f0" stroke-width="4"/>
+      <text x="40" y="110" font-size="16" fill="#5fc4f0">Original stream</text>
+      <circle cx="150" cy="105" r="8" fill="#5fc4f0"/>
+      <circle cx="250" cy="105" r="8" fill="#5fc4f0"/>
+      <circle cx="340" cy="105" r="8" fill="#5fc4f0"/>
+      <circle cx="460" cy="105" r="8" fill="#5fc4f0"/>
+      <circle cx="620" cy="105" r="8" fill="#5fc4f0"/>
+      <circle cx="740" cy="105" r="8" fill="#5fc4f0"/>
+      <!-- kept arrows (green) -->
+      <line x1="150" y1="113" x2="150" y2="170" stroke="#5fe6a0" stroke-width="2"/>
+      <line x1="340" y1="113" x2="340" y2="170" stroke="#5fe6a0" stroke-width="2"/>
+      <line x1="620" y1="113" x2="620" y2="170" stroke="#5fe6a0" stroke-width="2"/>
+      <!-- rejected arrows (orange) -->
+      <line x1="250" y1="113" x2="250" y2="235" stroke="#f0a05f" stroke-width="2"/>
+      <line x1="460" y1="113" x2="460" y2="235" stroke="#f0a05f" stroke-width="2"/>
+      <line x1="740" y1="113" x2="740" y2="235" stroke="#f0a05f" stroke-width="2"/>
+      <!-- kept stream -->
+      <line x1="90" y1="175" x2="830" y2="175" stroke="#5fe6a0" stroke-width="4"/>
+      <!-- rejected stream -->
+      <line x1="90" y1="240" x2="830" y2="240" stroke="#f0a05f" stroke-width="4"/>
+      <circle cx="150" cy="175" r="8" fill="#5fe6a0"/>
+      <circle cx="340" cy="175" r="8" fill="#5fe6a0"/>
+      <circle cx="620" cy="175" r="8" fill="#5fe6a0"/>
+      <circle cx="250" cy="240" r="8" fill="#f0a05f"/>
+      <circle cx="460" cy="240" r="8" fill="#f0a05f"/>
+      <circle cx="740" cy="240" r="8" fill="#f0a05f"/>
+      <text x="40" y="180" font-size="15" fill="#5fe6a0">Kept with prob. p  →  rate pλ</text>
+      <text x="40" y="245" font-size="15" fill="#f0a05f">Rejected with prob. 1−p  →  rate (1−p)λ</text>
+    </svg>
+    <div class="diagram-caption">Each arrival is independently routed to Type A (kept) or Type B (rejected). Both sub-streams are Poisson.</div>
+  </div>
+
+  <div class="example-box">
+    <div class="ex-label">Example: Website Purchases</div>
+    <p>Website visits follow a Poisson process with rate 120 per hour. Each visitor independently buys something with probability \(0.08\). Then purchases form a Poisson process with rate:</p>
+    <div class="chalkboard">
+      <div class="math-line">\[ 120 \times 0.08 = 9.6 \text{ per hour.} \]</div>
+      <p>Number of purchases in the next 30 minutes \(\sim \text{Poisson}(9.6 \times 0.5) = \text{Poisson}(4.8)\).</p>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <div class="note-label">General Splitting</div>
+    <p>If each arrival is independently labeled type \(1, 2, \ldots, m\) with probabilities \(p_1, p_2, \ldots, p_m\) (summing to 1), then the type-\(i\) stream is Poisson with rate \(\lambda p_i\), and all the streams are independent.</p>
+  </div>
+</section>
+
+<!-- ─── SECTION 4: CONDITIONING ─── -->
+<section id="conditioning">
+  <h2><span class="num">4</span> Conditioning on the Total Count</h2>
+
+  <p>A very useful trick in Poisson process problems is to condition on the total number of arrivals in a fixed time interval.</p>
+
+  <div class="def-box">
+    <div class="def-title">Conditional Uniformity Theorem</div>
+    <p>Given that \(N(t) = n\), the \(n\) arrival times in \([0,t]\) behave like the <strong>order statistics</strong> of \(n\) i.i.d. \(\text{Uniform}(0,t)\) random variables.</p>
+  </div>
+
+  <h3>Why This Matters</h3>
+  <p>Once you condition on the total number of arrivals, the exact arrival locations become easy to work with. A Poisson process problem becomes an order-statistics problem.</p>
+
+  <div class="two-col">
+    <div class="def-box">
+      <div class="def-title">Equivalent Statement</div>
+      <p>If \(0 < U_{(1)} < \cdots < U_{(n)} < t\) are the ordered arrival times, then</p>
+      <div class="math-line">\[ (U_{(1)},\ldots,U_{(n)}) \mid N(t)=n \]</div>
+      <p>has the same distribution as the sorted version of \(n\) i.i.d. \(\text{Uniform}(0,t)\) samples.</p>
+    </div>
+    <div class="def-box">
+      <div class="def-title">Type Labels Given Total Count</div>
+      <p>If each arrival is independently Type A with probability \(p\), then conditional on \(N(t)=n\):</p>
+      <div class="math-line">\[ N_A(t) \mid N(t)=n \;\sim\; \operatorname{Binomial}(n,\,p). \]</div>
+      <p>More generally, type counts have a multinomial distribution.</p>
+    </div>
+  </div>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 900 210" xmlns="http://www.w3.org/2000/svg" style="max-width:100%">
+      <text x="40" y="52" font-size="20" fill="#e8eaf6" font-weight="700">Given N(t) = 5, the 5 arrival times are randomly scattered in [0, t]</text>
+      <line x1="80" y1="120" x2="820" y2="120" stroke="#9095b8" stroke-width="3"/>
+      <text x="68" y="145" font-size="15" fill="#9095b8">0</text>
+      <text x="816" y="145" font-size="15" fill="#9095b8">t</text>
+      <circle cx="165" cy="120" r="8" fill="#5fc4f0"/>
+      <circle cx="260" cy="120" r="8" fill="#5fc4f0"/>
+      <circle cx="410" cy="120" r="8" fill="#5fc4f0"/>
+      <circle cx="590" cy="120" r="8" fill="#5fc4f0"/>
+      <circle cx="735" cy="120" r="8" fill="#5fc4f0"/>
+      <text x="148" y="92" font-size="15" fill="#5fc4f0">U₍₁₎</text>
+      <text x="243" y="92" font-size="15" fill="#5fc4f0">U₍₂₎</text>
+      <text x="393" y="92" font-size="15" fill="#5fc4f0">U₍₃₎</text>
+      <text x="573" y="92" font-size="15" fill="#5fc4f0">U₍₄₎</text>
+      <text x="718" y="92" font-size="15" fill="#5fc4f0">U₍₅₎</text>
+    </svg>
+    <div class="diagram-caption">Conditional on \(N(t)=5\), the 5 arrival times are distributed as 5 ordered uniform points on \([0,t]\).</div>
+  </div>
+
+  <div class="example-box">
+    <div class="ex-label">Example: Bus Arrivals</div>
+    <p>Buses arrive according to a Poisson process with rate \(\lambda = 2\) per hour. Given that exactly 3 buses arrive in the next hour, what is the probability that at least one arrives in the first 10 minutes?</p>
+    <div class="chalkboard">
+      <p>Conditional on \(N(1)=3\), the 3 arrival times are like 3 i.i.d. \(\text{Uniform}(0,1)\) points.</p>
+      <div class="math-line">
+        \[ P(\text{at least one in first }\tfrac{1}{6}\text{ hour} \mid N(1)=3) = 1 - \left(\frac{5}{6}\right)^3 \approx 0.421 \]
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── SECTION 5: COMPOUND POISSON ─── -->
+<section id="compound">
+  <h2><span class="num">5</span> Compound Poisson Processes</h2>
+
+  <div class="def-box">
+    <div class="def-title">Definition: Compound Poisson Process</div>
+    <p>Let \(N(t)\) be a Poisson process of rate \(\lambda\), and let \(Y_1, Y_2, \ldots\) be i.i.d. random variables independent of \(N(t)\). Define</p>
+    <div class="math-line">\[ S(t) = \sum_{i=1}^{N(t)} Y_i, \]</div>
+    <p>where the empty sum is 0 when \(N(t)=0\). This is called a <strong>compound Poisson process</strong>.</p>
+  </div>
+
+  <p>Ordinary Poisson counting adds 1 at each arrival. Compound Poisson adds a random jump size instead — modeling random shocks, insurance claims, transaction values, packet sizes, rainfall totals, and many other cumulative quantities.</p>
+
+  <h3>Important Formulas</h3>
+  <div class="two-col">
+    <div class="def-box">
+      <div class="def-title">Mean</div>
+      <div class="math-line">\[ \mathbb{E}[S(t)] = \mathbb{E}[N(t)]\,\mathbb{E}[Y_1] = \lambda t\,\mathbb{E}[Y_1] \]</div>
+    </div>
+    <div class="def-box">
+      <div class="def-title">Variance</div>
+      <div class="math-line">\[ \operatorname{Var}(S(t)) = \lambda t\,\mathbb{E}[Y_1^2] \]</div>
+      <p>Equivalent form:</p>
+      <div class="math-line">\[ \operatorname{Var}(S(t)) = \lambda t\,\operatorname{Var}(Y_1) + \lambda t\,(\mathbb{E}[Y_1])^2 \]</div>
+    </div>
+  </div>
+
+  <h3>Why the Variance Looks Like That</h3>
+  <p>The randomness comes from two sources: the number of jumps \(N(t)\) is random, <em>and</em> the jump sizes \(Y_i\) are random. Using the law of total variance:</p>
+
+  <div class="chalkboard">
+    <div class="math-line">
+      \[ \operatorname{Var}(S(t)) = \mathbb{E}\!\bigl[\operatorname{Var}(S(t)\mid N(t))\bigr] + \operatorname{Var}\!\bigl(\mathbb{E}[S(t)\mid N(t)]\bigr) \]
+    </div>
+    <p>Given \(N(t)=n\), \(S(t)\) is a sum of \(n\) i.i.d. terms, so both pieces simplify to give \(\lambda t\,\mathbb{E}[Y_1^2]\).</p>
+  </div>
+
+  <h3>Sample Path Diagram</h3>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 920 280" xmlns="http://www.w3.org/2000/svg" style="max-width:100%">
+      <text x="40" y="50" font-size="20" fill="#e8eaf6" font-weight="700">Compound Poisson sample path</text>
+      <line x1="80" y1="220" x2="840" y2="220" stroke="#9095b8" stroke-width="2.5"/>
+      <line x1="80" y1="220" x2="80" y2="80" stroke="#9095b8" stroke-width="2.5"/>
+      <text x="844" y="226" font-size="14" fill="#9095b8">time</text>
+      <text x="48" y="88" font-size="14" fill="#9095b8">S(t)</text>
+      <polyline fill="none" stroke="#5fc4f0" stroke-width="4"
+        points="80,220 180,220 180,185 290,185 290,145 430,145 430,130 590,130 590,92 760,92 760,92"/>
+      <circle cx="180" cy="185" r="6" fill="#5fc4f0"/>
+      <circle cx="290" cy="145" r="6" fill="#5fc4f0"/>
+      <circle cx="430" cy="130" r="6" fill="#5fc4f0"/>
+      <circle cx="590" cy="92" r="6" fill="#5fc4f0"/>
+      <text x="145" y="175" font-size="14" fill="#7c6af7">Y₁</text>
+      <text x="255" y="135" font-size="14" fill="#7c6af7">Y₂</text>
+      <text x="395" y="120" font-size="14" fill="#7c6af7">Y₃</text>
+      <text x="555" y="82" font-size="14" fill="#7c6af7">Y₄</text>
+    </svg>
+    <div class="diagram-caption">Compound Poisson: the process jumps by a random amount \(Y_i\) at each Poisson arrival time, rather than always jumping by 1.</div>
+  </div>
+
+  <div class="example-box">
+    <div class="ex-label">Example: Insurance Claims</div>
+    <p>Claims arrive as a Poisson process of rate \(\lambda = 5\) per week. Each claim amount has mean \(2000\) and \(\mathbb{E}[Y^2] = 6{,}500{,}000\).</p>
+    <div class="chalkboard">
+      <p>Let \(S(2)\) = total claim amount over 2 weeks \((\lambda t = 10)\):</p>
+      <div class="math-line">\[ \mathbb{E}[S(2)] = 5 \cdot 2 \cdot 2000 = 20{,}000 \]</div>
+      <div class="math-line">\[ \operatorname{Var}(S(2)) = 5 \cdot 2 \cdot 6{,}500{,}000 = 65{,}000{,}000 \]</div>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <div class="note-label">⚠️ Key Distinction</div>
+    <p>Do not confuse \(N(t)\) and \(S(t)\). The first counts <em>how many</em> arrivals occurred. The second accumulates <em>how much total size</em> those arrivals contributed.</p>
+  </div>
+</section>
+
+<!-- ─── SECTION 6: EXAMPLES ─── -->
+<section id="examples">
+  <h2><span class="num">6</span> Worked Examples</h2>
+
+  <div class="example-box">
+    <div class="ex-label">Example 1 — Merging Streams</div>
+    <p>Emails from Team A arrive at rate 6 per hour and from Team B at rate 4 per hour, independently.</p>
+    <p><strong>(a)</strong> What is the distribution of total emails in 30 minutes?</p>
+    <div class="chalkboard">
+      <p>Total rate is \(6+4=10\) per hour. In 30 minutes \((t=0.5)\), mean is \(10 \cdot 0.5 = 5\).</p>
+      <div class="math-line">\[ N(0.5) \sim \operatorname{Poisson}(5). \]</div>
+    </div>
+    <p><strong>(b)</strong> What is \(P(N(0.5) = 2)\)?</p>
+    <div class="chalkboard">
+      <div class="math-line">\[ P(N(0.5)=2) = e^{-5}\frac{5^2}{2!} = \frac{25e^{-5}}{2} \approx 0.0842 \]</div>
+    </div>
+  </div>
+
+  <div class="example-box">
+    <div class="ex-label">Example 2 — Thinning Into Purchases</div>
+    <p>Customers arrive at a store at rate \(18\) per hour. Each customer independently buys a featured product with probability \(0.25\).</p>
+    <p><strong>(a)</strong> Featured-product purchases form a Poisson process of rate:</p>
+    <div class="chalkboard">
+      <div class="math-line">\[ 18 \times 0.25 = 4.5 \text{ per hour.} \]</div>
+    </div>
+    <p><strong>(b)</strong> Probability of exactly 3 such purchases in the next 2 hours (mean \(= 4.5 \cdot 2 = 9\)):</p>
+    <div class="chalkboard">
+      <div class="math-line">\[ P(N_A(2) = 3) = e^{-9}\frac{9^3}{3!} \approx 0.0150 \]</div>
+    </div>
+  </div>
+
+  <div class="example-box">
+    <div class="ex-label">Example 3 — Conditional Count by Type</div>
+    <p>Suppose 12 arrivals occur in \([0,1]\), and each one is red with probability \(0.3\) independently. What is the probability that exactly 5 are red?</p>
+    <div class="chalkboard">
+      <p>Conditional on the total count being 12, the red count is \(\text{Binomial}(12, 0.3)\):</p>
+      <div class="math-line">\[ P(N_R(1)=5 \mid N(1)=12) = \binom{12}{5}(0.3)^5(0.7)^7 \approx 0.1585 \]</div>
+    </div>
+  </div>
+
+  <div class="example-box">
+    <div class="ex-label">Example 4 — Using Conditional Arrival Times</div>
+    <p>Given that exactly 4 arrivals occurred by time \(t\), what is the probability that all 4 happened after time \(t/3\)?</p>
+    <div class="chalkboard">
+      <p>Given \(N(t)=4\), arrivals are like 4 independent \(\text{Uniform}(0,t)\) points. Each is after \(t/3\) with probability \(2/3\):</p>
+      <div class="math-line">\[ P(\text{all 4 after }t/3 \mid N(t)=4) = \left(\frac{2}{3}\right)^4 = \frac{16}{81} \approx 0.198 \]</div>
+    </div>
+  </div>
+
+  <div class="example-box">
+    <div class="ex-label">Example 5 — Compound Poisson Expected Total</div>
+    <p>Machine breakdowns occur as a Poisson process with rate 3 per month. Repair cost per breakdown has mean \(500\) dollars. Expected total repair cost over 4 months:</p>
+    <div class="chalkboard">
+      <div class="math-line">\[ \mathbb{E}[S(4)] = \lambda t\,\mathbb{E}[Y] = 3 \cdot 4 \cdot 500 = \$6{,}000 \]</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── SECTION 7: PITFALLS ─── -->
+<section id="pitfalls">
+  <h2><span class="num">7</span> Common Pitfalls</h2>
+
+  <div class="note-box">
+    <div class="note-label">⚠️ Pitfall 1 — Forgetting Independence</div>
+    <p>Superposition and thinning formulas rely on <strong>independence</strong>. If the original streams are not independent, or if labels are not assigned independently, the result need not be Poisson.</p>
+  </div>
+
+  <div class="note-box">
+    <div class="note-label">⚠️ Pitfall 2 — Mixing Up Rate and Mean</div>
+    <p>The <strong>rate</strong> is \(\lambda\) per unit time. The Poisson mean over an interval of length \(t\) is \(\lambda t\). Always multiply by the time length.</p>
+  </div>
+
+  <div class="note-box">
+    <div class="note-label">⚠️ Pitfall 3 — Thinned Count vs. Conditional Count</div>
+    <p>Unconditionally, the thinned count over time \(t\) is <strong>Poisson</strong> with mean \(p\lambda t\). It becomes Binomial <em>only when you condition</em> on the total original count \(N(t)=n\).</p>
+  </div>
+
+  <div class="note-box">
+    <div class="note-label">⚠️ Pitfall 4 — Poisson Variable vs. Poisson Process</div>
+    <p>A Poisson <em>random variable</em> gives one count. A Poisson <em>process</em> is the entire time-indexed collection \(\{N(t) : t \ge 0\}\) with independent increments.</p>
+  </div>
+</section>
+
+<!-- ─── SECTION 8: SUMMARY ─── -->
+<section id="summary">
+  <h2><span class="num">8</span> Final Summary Sheet</h2>
+
+  <table>
+    <thead>
+      <tr><th>Topic</th><th>Key Fact</th><th>Main Formula</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Poisson count</td>
+        <td>Number of arrivals by time \(t\)</td>
+        <td>\(N(t) \sim \operatorname{Poisson}(\lambda t)\)</td>
+      </tr>
+      <tr>
+        <td>Superposition</td>
+        <td>Sum of independent Poisson processes is Poisson</td>
+        <td>\(\lambda_{\text{total}} = \sum_i \lambda_i\)</td>
+      </tr>
+      <tr>
+        <td>Thinning</td>
+        <td>Keep each arrival with probability \(p\)</td>
+        <td>New rate \(= p\lambda\)</td>
+      </tr>
+      <tr>
+        <td>Split into many types</td>
+        <td>Independent labeled subprocesses</td>
+        <td>Type \(i\) rate \(= p_i\lambda\)</td>
+      </tr>
+      <tr>
+        <td>Condition on \(N(t)=n\)</td>
+        <td>Arrival times are ordered Uniform\((0,t)\) points</td>
+        <td>\(N_A(t) \mid N(t)=n \sim \operatorname{Binomial}(n,p)\)</td>
+      </tr>
+      <tr>
+        <td>Compound Poisson</td>
+        <td>Random jump sizes at Poisson times</td>
+        <td>\(S(t) = \sum_{i=1}^{N(t)} Y_i\)</td>
+      </tr>
+      <tr>
+        <td>Compound mean</td>
+        <td>Total expected accumulated size</td>
+        <td>\(\mathbb{E}[S(t)] = \lambda t\,\mathbb{E}[Y]\)</td>
+      </tr>
+      <tr>
+        <td>Compound variance</td>
+        <td>Variation from count + jump sizes</td>
+        <td>\(\operatorname{Var}(S(t)) = \lambda t\,\mathbb{E}[Y^2]\)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>What You Should Be Able to Do After Lecture 10</h3>
+  <ul class="checklist">
+    <li>Recognize when merged streams are still Poisson and state the resulting rate</li>
+    <li>Thin a process and correctly adjust the rate</li>
+    <li>Use conditioning on \(N(t)=n\) to turn a Poisson process question into a Binomial or Uniform problem</li>
+    <li>Define a compound Poisson process and compute its mean and variance</li>
+    <li>Explain <em>why</em> these transformations work, not just quote the results</li>
+  </ul>
+
+  <div class="note-box">
+    <div class="note-label">📐 Big-Picture Memory Aid</div>
+    <p>
+      <strong>Merge</strong> independent Poisson streams → still Poisson, rates add.&nbsp;
+      <strong>Split</strong> a Poisson stream independently by type → each type is still Poisson, rate scales by \(p_i\).&nbsp;
+      <strong>Attach sizes</strong> to arrivals → compound Poisson, mean and variance scale with \(\lambda t\).
+    </p>
+  </div>
+</section>
+
+<hr class="divider">
+
+</div><!-- end .container -->
+
+<div class="lec-nav-l10">
+  <span class="nav-title">End of Lecture 10</span>
+  <a href="lecture-09.html">← Lecture 9: Exponential RVs &amp; Poisson Process</a>
+</div>
+
+<script src="../assets/script.js"></script>
+</body>
+</html>
