@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 1 — Stochastic Processes</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="label">S403 · Stochastic Processes</div>
+  <h1>Lecture 1: Introduction to Stochastic Processes</h1>
+  <p class="subtitle">From random variables to random trajectories through time</p>
+  <div class="meta">
+    <span>📖 Sections 1.1–1.2 (Essentials of SP)</span>
+    <span>🎯 Undergraduate Data Science</span>
+    <span>⏱ ~60 min read</span>
+  </div>
+</header>
+
+<!-- NAVIGATION -->
+<nav>
+  <span class="nav-label">Jump to:</span>
+  <a href="#overview">Overview</a>
+  <a href="#foundations">Foundations</a>
+  <a href="#iid">i.i.d. Sequences</a>
+  <a href="#markov">Markov Chains</a>
+  <a href="#transition">Transition Matrix</a>
+  <a href="#walk">Random Walk</a>
+  <a href="#flashcards">Flashcards</a>
+  <a href="Lecture2_StochasticProcesses.html" style="margin-left:auto; background:rgba(95,196,240,0.12); color:var(--accent2); border:1px solid rgba(95,196,240,0.3); border-radius:6px;">Lecture 2 →</a>
+</nav>
+
+<!-- ════════════════════════════════════════ -->
+<div class="container">
+
+<!-- ─── SECTION 0: OVERVIEW ─── -->
+<section id="overview">
+  <h2><span class="num">0</span> What Are We Studying Today?</h2>
+
+  <p>Welcome to Stochastic Processes! As a data science student, you already know what a <em>random variable</em> is — a number whose value is uncertain, described by a probability distribution. But what happens when we don't have just <em>one</em> random number, but a whole <em>sequence</em> of them evolving over time?</p>
+
+  <p>That's exactly what stochastic processes are about. Think about:</p>
+
+  <div class="two-col">
+    <div class="example-box">
+      <div class="ex-label">Real-World Examples</div>
+      <p>📈 A stock price changing every day</p>
+      <p>🌦 Temperature recorded hourly</p>
+      <p>🧬 A gene switching on/off over generations</p>
+      <p>🚶 A particle randomly bouncing in a gas</p>
+    </div>
+    <div class="example-box">
+      <div class="ex-label">Today's Agenda (from slides)</div>
+      <p>✅ What is a stochastic process?</p>
+      <p>✅ Why are they useful?</p>
+      <p>✅ i.i.d. sequences and derived processes</p>
+      <p>✅ Conditioning on past information</p>
+      <p>✅ The <strong>Markov property</strong></p>
+      <p>✅ Transition probabilities</p>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <div class="note-label">📚 Textbook Reference</div>
+    <p>This lecture covers <strong>Sections 1.1–1.2</strong> of <em>Essentials of Stochastic Processes</em> (2nd Ed.). The book provides rigorous proofs and additional examples beyond what's in these slides.</p>
+  </div>
+</section>
+
+<!-- ─── SECTION 1: FOUNDATIONS ─── -->
+<section id="foundations">
+  <h2><span class="num">1</span> Foundations: Probability Spaces & Stochastic Processes</h2>
+
+  <h3>1.1 — The Probability Space: \((\Omega, \mathcal{A}, P)\)</h3>
+
+  <p>Before we define a stochastic process, we need the underlying mathematical foundation: a <strong>probability space</strong>. Your lecturer introduced this formally on Slide 3. Don't be intimidated — it has three simple ingredients:</p>
+
+  <div class="chalkboard">
+    <p>A "probability space" is a triple:</p>
+    <div class="math-line">\[ (\Omega,\; \mathcal{A},\; P) \]</div>
+    <p>where:</p>
+    <p>&nbsp;&nbsp;— \(\Omega\) is the <em>sample space</em>: the set of all possible outcomes (\(\omega \in \Omega\) is one outcome)</p>
+    <p>&nbsp;&nbsp;— \(\mathcal{A}\) is a collection of subsets of \(\Omega\), called <em>events</em> (the "fancy \(\mathcal{A}\)")</p>
+    <p>&nbsp;&nbsp;— \(P\) is the <em>probability measure</em>: a countably additive function \(P: \mathcal{A} \to [0,1]\)</p>
+    <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;satisfying: \(P(\emptyset) \geq 0\), \(P(\Omega) = 1\), and if \(A_1, A_2, \ldots\) are disjoint,</p>
+    <div class="math-line">\[ \sum_i P(A_i) = P\!\left(\bigcup_i A_i\right) \]</div>
+  </div>
+
+  <div class="two-col">
+    <div class="def-box">
+      <div class="def-title">Simple Example (Slide 4)</div>
+      <p>For the trivial process \(X_n = 1\) for all \(n\):<br>
+      \(\Omega = \{a\}\), &nbsp; \(\mathcal{A} = \{\emptyset, \{a\}\}\), &nbsp; \(P(a) = 1\)</p>
+    </div>
+    <div class="def-box">
+      <div class="def-title">For an i.i.d. Sequence (Slide 5)</div>
+      <p>We can take \(\Omega = \{(x_1, x_2, \ldots) : x_i \in \mathbb{R}\}\) — the space of all infinite sequences of reals. \(P\) is defined from the common distribution \(F\).</p>
+    </div>
+  </div>
+
+  <h3>1.2 — The Definition of a Stochastic Process</h3>
+
+  <div class="def-box">
+    <div class="def-title">Core Definition (Slides 1–2)</div>
+    <p>A <strong>stochastic process</strong> is a <em>collection of random variables on a common probability space, indexed by time</em>.</p>
+    <br>
+    <p>Technically: there is a sample space \(\Omega\) and a <strong>state space</strong> \(S\) (often a finite set, \(\mathbb{N}\), or \(\mathbb{R}\)) such that for each time index \(n\), we have a random variable \(X_n : \Omega \to S\).</p>
+  </div>
+
+  <div class="diagram-wrap">
+    <svg width="700" height="160" viewBox="0 0 700 160">
+      <!-- Time axis -->
+      <line x1="40" y1="100" x2="660" y2="100" stroke="#5fc4f0" stroke-width="2"/>
+      <polygon points="660,95 675,100 660,105" fill="#5fc4f0"/>
+      <text x="680" y="104" fill="#5fc4f0" font-size="14">time</text>
+      <!-- Time ticks -->
+      <line x1="100" y1="93" x2="100" y2="107" stroke="#9095b8" stroke-width="1.5"/>
+      <line x1="200" y1="93" x2="200" y2="107" stroke="#9095b8" stroke-width="1.5"/>
+      <line x1="300" y1="93" x2="300" y2="107" stroke="#9095b8" stroke-width="1.5"/>
+      <line x1="400" y1="93" x2="400" y2="107" stroke="#9095b8" stroke-width="1.5"/>
+      <line x1="500" y1="93" x2="500" y2="107" stroke="#9095b8" stroke-width="1.5"/>
+      <line x1="600" y1="93" x2="600" y2="107" stroke="#9095b8" stroke-width="1.5"/>
+      <!-- Labels -->
+      <text x="94" y="125" fill="#9095b8" font-size="12">n=0</text>
+      <text x="194" y="125" fill="#9095b8" font-size="12">n=1</text>
+      <text x="294" y="125" fill="#9095b8" font-size="12">n=2</text>
+      <text x="394" y="125" fill="#9095b8" font-size="12">n=3</text>
+      <text x="494" y="125" fill="#9095b8" font-size="12">n=4</text>
+      <text x="594" y="125" fill="#9095b8" font-size="12">n=5</text>
+      <!-- Random variables above axis -->
+      <text x="83" y="60" fill="#7c6af7" font-size="13">X₀</text>
+      <text x="183" y="42" fill="#7c6af7" font-size="13">X₁</text>
+      <text x="283" y="68" fill="#7c6af7" font-size="13">X₂</text>
+      <text x="383" y="38" fill="#7c6af7" font-size="13">X₃</text>
+      <text x="483" y="72" fill="#7c6af7" font-size="13">X₄</text>
+      <text x="583" y="50" fill="#7c6af7" font-size="13">X₅</text>
+      <!-- Dots on axis -->
+      <circle cx="100" cy="100" r="5" fill="#7c6af7"/>
+      <circle cx="200" cy="100" r="5" fill="#7c6af7"/>
+      <circle cx="300" cy="100" r="5" fill="#7c6af7"/>
+      <circle cx="400" cy="100" r="5" fill="#7c6af7"/>
+      <circle cx="500" cy="100" r="5" fill="#7c6af7"/>
+      <circle cx="600" cy="100" r="5" fill="#7c6af7"/>
+      <!-- Arrows to RVs -->
+      <line x1="100" y1="95" x2="100" y2="68" stroke="#7c6af7" stroke-width="1.2" stroke-dasharray="4,3"/>
+      <line x1="200" y1="95" x2="200" y2="50" stroke="#7c6af7" stroke-width="1.2" stroke-dasharray="4,3"/>
+      <line x1="300" y1="95" x2="300" y2="76" stroke="#7c6af7" stroke-width="1.2" stroke-dasharray="4,3"/>
+      <line x1="400" y1="95" x2="400" y2="46" stroke="#7c6af7" stroke-width="1.2" stroke-dasharray="4,3"/>
+      <line x1="500" y1="95" x2="500" y2="80" stroke="#7c6af7" stroke-width="1.2" stroke-dasharray="4,3"/>
+      <line x1="600" y1="95" x2="600" y2="58" stroke="#7c6af7" stroke-width="1.2" stroke-dasharray="4,3"/>
+      <!-- Brace label -->
+      <text x="330" y="145" fill="#5fc4f0" font-size="11" text-anchor="middle">( Xₙ )ₙ∈ℕ — a stochastic process</text>
+    </svg>
+    <div class="diagram-caption">A discrete-time stochastic process: at each time step n, X_n is a random variable taking values in S.</div>
+  </div>
+
+  <h3>1.3 — Discrete vs. Continuous Time</h3>
+
+  <div class="chalkboard">
+    <p>\((X_n)_{n \in \mathbb{N}}\) &nbsp;&nbsp;&nbsp;&nbsp; — <em>discrete time</em> (time steps: 0, 1, 2, 3, …)</p>
+    <div class="math-line" style="margin-top:0.6rem;">\((X_t)_{t \in \mathbb{R}_+}\) &nbsp;&nbsp;&nbsp;&nbsp; — <em>continuous time</em> (t can be any non-negative real number)</div>
+  </div>
+
+  <p>In this course, we primarily work with <strong>discrete time</strong> first, then extend ideas to continuous time. All examples in Lecture 1 use discrete time.</p>
+
+  <div class="note-box">
+    <div class="note-label">💡 Key Intuition</div>
+    <p>The notation \(X_n(\omega)\) emphasizes that each random variable depends on the underlying "chance outcome" \(\omega\). But in practice, we write \(X_n\) and suppress \(\omega\), trusting the probability measure \(P\) to handle it (as your slides note: "we suppress the ω").</p>
+  </div>
+</section>
+
+<!-- ─── SECTION 2: i.i.d. ─── -->
+<section id="iid">
+  <h2><span class="num">2</span> i.i.d. Sequences: The Simplest Stochastic Process</h2>
+
+  <p>The simplest kind of stochastic process is one where all random variables are <strong>independent</strong> and have the <strong>same distribution</strong> — this is the i.i.d. (independent and identically distributed) sequence.</p>
+
+  <div class="def-box">
+    <div class="def-title">Definition: i.i.d. Sequence</div>
+    <p>A sequence \((X_n)_{n \geq 1}\) is <strong>i.i.d. with distribution function \(F\)</strong> if:<br><br>
+    For all \(n\) and all Borel sets \(A_1, \ldots, A_n \subset \mathbb{R}\):</p>
+    <div style="text-align:center; margin-top:0.8rem;">
+      \[ P(X_i \in A_i \;\forall\, i \leq n) = \prod_{i=1}^n P(X_i \in A_i) \quad (\star) \]
+    </div>
+    <p style="margin-top:0.8rem;">and \(P(X_n \leq x) = F(x)\) for all \(x \in \mathbb{R}\) (same distribution for each \(n\)).</p>
+  </div>
+
+  <p>The key condition \((\star)\) says: <em>knowing the value of \(X_1\) tells you nothing about \(X_2\), \(X_3\), etc.</em> Each draw is truly independent.</p>
+
+  <div class="diagram-wrap">
+    <svg width="640" height="140" viewBox="0 0 640 140">
+      <!-- i.i.d. illustration: each RV same dist, independent -->
+      <defs>
+        <radialGradient id="g1" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#7c6af7" stop-opacity="0.6"/>
+          <stop offset="100%" stop-color="#7c6af7" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <!-- Distribution curves for each Xi (stylized) -->
+      <g transform="translate(30,10)">
+        <text x="40" y="15" fill="#9095b8" font-size="11" text-anchor="middle">X₁</text>
+        <rect x="10" y="20" width="60" height="70" rx="6" fill="rgba(124,106,247,0.1)" stroke="rgba(124,106,247,0.4)" stroke-width="1"/>
+        <path d="M15 80 Q40 25 65 80" stroke="#7c6af7" stroke-width="2" fill="none"/>
+        <text x="40" y="105" fill="#5fc4f0" font-size="10" text-anchor="middle">F</text>
+      </g>
+      <text x="110" y="62" fill="#9095b8" font-size="18">×</text>
+      <g transform="translate(125,10)">
+        <text x="40" y="15" fill="#9095b8" font-size="11" text-anchor="middle">X₂</text>
+        <rect x="10" y="20" width="60" height="70" rx="6" fill="rgba(124,106,247,0.1)" stroke="rgba(124,106,247,0.4)" stroke-width="1"/>
+        <path d="M15 80 Q40 25 65 80" stroke="#7c6af7" stroke-width="2" fill="none"/>
+        <text x="40" y="105" fill="#5fc4f0" font-size="10" text-anchor="middle">F</text>
+      </g>
+      <text x="210" y="62" fill="#9095b8" font-size="18">×</text>
+      <g transform="translate(225,10)">
+        <text x="40" y="15" fill="#9095b8" font-size="11" text-anchor="middle">X₃</text>
+        <rect x="10" y="20" width="60" height="70" rx="6" fill="rgba(124,106,247,0.1)" stroke="rgba(124,106,247,0.4)" stroke-width="1"/>
+        <path d="M15 80 Q40 25 65 80" stroke="#7c6af7" stroke-width="2" fill="none"/>
+        <text x="40" y="105" fill="#5fc4f0" font-size="10" text-anchor="middle">F</text>
+      </g>
+      <text x="310" y="62" fill="#9095b8" font-size="16">···</text>
+      <!-- Arrow and label -->
+      <text x="390" y="40" fill="#f5f5f0" font-size="12">Same distribution F</text>
+      <text x="390" y="62" fill="#f5f5f0" font-size="12">+ Independent</text>
+      <text x="390" y="84" fill="#5fe6a0" font-size="12">= i.i.d. sequence</text>
+    </svg>
+    <div class="diagram-caption">In an i.i.d. sequence, each Xₙ has the same distribution F, and all variables are mutually independent.</div>
+  </div>
+
+  <div class="example-box">
+    <div class="ex-label">Example: Fair Coin Flips</div>
+    <p>Let \(X_n = 1\) if the \(n\)-th flip is Heads, \(X_n = 0\) if Tails. Then \((X_n)\) is i.i.d. with \(P(X_n = 1) = P(X_n = 0) = \frac{1}{2}\).</p>
+    <p>Independence means: \(P(X_1 = 1, X_2 = 0, X_3 = 1) = \frac{1}{2} \cdot \frac{1}{2} \cdot \frac{1}{2} = \frac{1}{8}\).</p>
+    <p>Knowing the first flip landed Heads tells you nothing about the second flip.</p>
+  </div>
+</section>
+
+<!-- ─── SECTION 3: MARKOV CHAINS ─── -->
+<section id="markov">
+  <h2><span class="num">3</span> The Markov Property & Markov Chains</h2>
+
+  <h3>3.1 — The Key Idea: "Only the Present Matters"</h3>
+
+  <p>In many real processes, the future depends on the past — but <em>only through the current state</em>. This is the defining insight of Markov chains.</p>
+
+  <div class="def-box">
+    <div class="def-title">Definition: Markov Property (Slide 7)</div>
+    <p>A stochastic process \((X_n)\) has the <strong>Markov property</strong> if, for all \(x, y \in S\) and all \(x_0, \ldots, x_{n-1}\):</p>
+    <div style="text-align:center; margin-top:0.8rem;">
+      \[ P(X_{n+1} = y \mid X_n = x,\; X_m = x_m\; \forall\, m < n) = P(X_1 = y \mid X_0 = x) \quad (\clubsuit) \]
+    </div>
+    <p style="margin-top:0.8rem;"><em>"The probability of the next state depends only on the current state — not on any earlier history."</em></p>
+    <p style="margin-top:0.4rem;">(The right-hand side is <strong>time-homogeneous</strong>: the probability doesn't depend on which time step \(n\) we are at.)</p>
+  </div>
+
+  <div class="diagram-wrap">
+    <svg width="680" height="130" viewBox="0 0 680 130">
+      <!-- Past states -->
+      <g>
+        <circle cx="60" cy="60" r="22" fill="#1a1d2e" stroke="#5fc4f0" stroke-width="1.5"/>
+        <text x="60" y="55" text-anchor="middle" fill="#9095b8" font-size="10">X₀</text>
+        <text x="60" y="70" text-anchor="middle" fill="#9095b8" font-size="10">=x₀</text>
+        <circle cx="155" cy="60" r="22" fill="#1a1d2e" stroke="#5fc4f0" stroke-width="1.5"/>
+        <text x="155" y="55" text-anchor="middle" fill="#9095b8" font-size="10">X₁</text>
+        <text x="155" y="70" text-anchor="middle" fill="#9095b8" font-size="10">=x₁</text>
+        <line x1="83" y1="60" x2="132" y2="60" stroke="#9095b8" stroke-width="1.2" stroke-dasharray="4,3"/>
+        <text x="108" y="52" text-anchor="middle" fill="#9095b8" font-size="9">···</text>
+        <circle cx="260" cy="60" r="22" fill="#1a1d2e" stroke="#5fc4f0" stroke-width="1.5"/>
+        <text x="260" y="55" text-anchor="middle" fill="#9095b8" font-size="10">Xₙ₋₁</text>
+        <text x="260" y="70" text-anchor="middle" fill="#9095b8" font-size="9">=xₙ₋₁</text>
+        <line x1="178" y1="60" x2="237" y2="60" stroke="#9095b8" stroke-width="1.2" stroke-dasharray="4,3"/>
+      </g>
+      <!-- Current state (highlighted) -->
+      <circle cx="380" cy="60" r="28" fill="rgba(124,106,247,0.2)" stroke="#7c6af7" stroke-width="2.5"/>
+      <text x="380" y="55" text-anchor="middle" fill="#e8eaf6" font-size="11" font-weight="bold">Xₙ</text>
+      <text x="380" y="70" text-anchor="middle" fill="#a89ef7" font-size="11">=x</text>
+      <line x1="283" y1="60" x2="351" y2="60" stroke="#9095b8" stroke-width="1.5"/>
+      <!-- Arrow to future -->
+      <line x1="409" y1="60" x2="500" y2="60" stroke="#5fe6a0" stroke-width="2"/>
+      <polygon points="500,55 516,60 500,65" fill="#5fe6a0"/>
+      <!-- Future state -->
+      <circle cx="545" cy="60" r="28" fill="rgba(95,230,160,0.1)" stroke="#5fe6a0" stroke-width="2"/>
+      <text x="545" y="55" text-anchor="middle" fill="#e8eaf6" font-size="11" font-weight="bold">Xₙ₊₁</text>
+      <text x="545" y="70" text-anchor="middle" fill="#5fe6a0" font-size="11">=y</text>
+      <!-- Label -->
+      <text x="455" y="48" text-anchor="middle" fill="#5fe6a0" font-size="10">p(x,y)</text>
+      <!-- Strikethrough past -->
+      <rect x="30" y="100" width="260" height="20" rx="4" fill="rgba(255,80,80,0.1)" stroke="rgba(255,80,80,0.3)" stroke-width="1"/>
+      <text x="160" y="113" text-anchor="middle" fill="#ff8080" font-size="10">❌ Ignored by Markov property</text>
+      <!-- Current matters label -->
+      <text x="380" y="108" text-anchor="middle" fill="#7c6af7" font-size="10">✅ All that matters</text>
+    </svg>
+    <div class="diagram-caption">The Markov property: the future state Xₙ₊₁ depends only on the present Xₙ, not on the full history X₀, X₁, …, Xₙ₋₁.</div>
+  </div>
+
+  <h3>3.2 — The Two-State Markov Chain (Slide 5)</h3>
+
+  <p>Your lecturer's first Markov chain example has state space \(S = \{a, b\}\) with the following transition diagram:</p>
+
+  <div class="diagram-wrap">
+    <svg width="480" height="200" viewBox="0 0 480 200">
+      <!-- State a -->
+      <circle cx="130" cy="100" r="40" fill="rgba(124,106,247,0.15)" stroke="#7c6af7" stroke-width="2.5"/>
+      <text x="130" y="96" text-anchor="middle" fill="#e8eaf6" font-size="20" font-weight="bold">a</text>
+      <text x="130" y="115" text-anchor="middle" fill="#9095b8" font-size="11">state a</text>
+      <!-- State b -->
+      <circle cx="350" cy="100" r="40" fill="rgba(95,196,240,0.15)" stroke="#5fc4f0" stroke-width="2.5"/>
+      <text x="350" y="96" text-anchor="middle" fill="#e8eaf6" font-size="20" font-weight="bold">b</text>
+      <text x="350" y="115" text-anchor="middle" fill="#9095b8" font-size="11">state b</text>
+      <!-- Self-loop a: p(a,a) = 0.6 -->
+      <path d="M105 62 Q80 15 130 35 Q155 45 148 65" stroke="#7c6af7" stroke-width="2" fill="none"/>
+      <polygon points="148,65 138,72 152,74" fill="#7c6af7"/>
+      <text x="98" y="20" fill="#7c6af7" font-size="14" font-weight="bold">0.6</text>
+      <!-- Arrow a→b: p(a,b) = 0.4 -->
+      <path d="M170 85 Q240 55 310 85" stroke="#5fe6a0" stroke-width="2" fill="none"/>
+      <polygon points="310,85 300,78 302,91" fill="#5fe6a0"/>
+      <text x="228" y="62" text-anchor="middle" fill="#5fe6a0" font-size="14" font-weight="bold">0.4</text>
+      <!-- Arrow b→a: p(b,a) = 0.5 -->
+      <path d="M310 115 Q240 145 170 115" stroke="#f0a05f" stroke-width="2" fill="none"/>
+      <polygon points="170,115 180,122 178,109" fill="#f0a05f"/>
+      <text x="228" y="148" text-anchor="middle" fill="#f0a05f" font-size="14" font-weight="bold">0.5</text>
+      <!-- Self-loop b: p(b,b) = 0.5 -->
+      <path d="M375 62 Q400 15 350 35 Q325 45 332 65" stroke="#5fc4f0" stroke-width="2" fill="none"/>
+      <polygon points="332,65 342,72 328,74" fill="#5fc4f0"/>
+      <text x="365" y="20" fill="#5fc4f0" font-size="14" font-weight="bold">0.5</text>
+    </svg>
+    <div class="diagram-caption">Two-state Markov chain. Arrows show transition probabilities. Note each row of outgoing probabilities sums to 1.</div>
+  </div>
+
+  <div class="note-box">
+    <div class="note-label">✔ Check: Rows Sum to 1</div>
+    <p>From state <strong>a</strong>: \(p(a,a) + p(a,b) = 0.6 + 0.4 = 1.0\) ✓<br>
+    From state <strong>b</strong>: \(p(b,a) + p(b,b) = 0.5 + 0.5 = 1.0\) ✓<br>
+    This is always required: from any state, the probabilities of going somewhere must sum to 1.</p>
+  </div>
+
+  <h3>3.3 — How to Construct a Markov Chain from i.i.d. Uniforms (Slide 6)</h3>
+
+  <p>Your lecturer showed a beautiful construction: given an i.i.d. sequence \((U_n)\) of Uniform\([0,1]\) random variables, we can <em>build</em> the Markov chain step by step.</p>
+
+  <div class="chalkboard">
+    <p>Start with \(X_0 = a\). At each step, flip \(U_{n+1} \sim \text{Uniform}[0,1]\):</p>
+    <div class="math-line">\(\text{If } X_n = a:\quad X_{n+1} = \begin{cases} a & \text{if } U_{n+1} \leq 0.6 \\ b & \text{if } U_{n+1} > 0.6 \end{cases}\)</div>
+    <div class="math-line">\(\text{If } X_n = b:\quad X_{n+1} = \begin{cases} b & \text{if } U_{n+1} \leq 0.5 \\ a & \text{if } U_{n+1} > 0.5 \end{cases}\)</div>
+  </div>
+
+  <p>This construction <strong>automatically satisfies the Markov property</strong> because each \(U_{n+1}\) is independent of all past \(U_1, \ldots, U_n\). The next state depends only on \(X_n\) (current state) and the fresh random draw \(U_{n+1}\).</p>
+
+  <p>The resulting probability:</p>
+  <div class="chalkboard">
+    <div class="math-line">\[P(X_{n+1} = a \mid X_n = a,\; X_{n-1},\; \ldots,\; X_0) = P(U_{n+1} \leq 0.6) = 0.6\]</div>
+    <p style="text-align:center; color: #9095b8; font-size:0.9rem;">→ doesn't care about earlier values: the Markov property holds!</p>
+  </div>
+</section>
+
+<!-- ─── SECTION 4: TRANSITION MATRIX ─── -->
+<section id="transition">
+  <h2><span class="num">4</span> Transition Probability Matrix</h2>
+
+  <h3>4.1 — Definition</h3>
+
+  <p>For a <strong>time-homogeneous Markov chain</strong> with finite state space \(S\), we define the <strong>one-step transition probability</strong>:</p>
+
+  <div class="chalkboard">
+    <div class="math-line">\[ p(x, y) := P(X_1 = y \mid X_0 = x) \]</div>
+    <p style="text-align:center; color: #9095b8; font-size: 0.9rem;">This is the same as \(P(X_{n+1}=y \mid X_n=x)\) for any \(n\) (time-homogeneous = doesn't depend on \(n\))</p>
+  </div>
+
+  <p>We collect all these into the <strong>transition probability matrix</strong> \(P\) (or sometimes denoted \(T\)):</p>
+
+  <div class="chalkboard">
+    <p>For \(S = \{a, b\}\), the two-state example has:</p>
+    <div class="math-line">
+      \[ P = \begin{pmatrix} p(a,a) & p(a,b) \\ p(b,a) & p(b,b) \end{pmatrix} = \begin{pmatrix} 0.6 & 0.4 \\ 0.5 & 0.5 \end{pmatrix} \]
+    </div>
+    <p style="text-align:center; color: #9095b8; font-size: 0.9rem;">Rows = "from" state; Columns = "to" state. Each row sums to 1.</p>
+  </div>
+
+  <h3>4.2 — Computing Trajectory Probabilities (Slides 9–11)</h3>
+
+  <p>The Markov property makes it easy to compute the probability of any trajectory. For example:</p>
+
+  <div class="chalkboard">
+    <p>Starting at \(X_0 = a\), find \(P(X_1 = a,\; X_2 = b,\; X_3 = a \mid X_0 = a)\):</p>
+    <div class="math-line">
+      \[= P(X_3=a \mid X_2=b) \cdot P(X_2=b \mid X_1=a) \cdot P(X_1=a \mid X_0=a)\]
+    </div>
+    <div class="math-line">
+      \[= p(b,a) \cdot p(a,b) \cdot p(a,a) = 0.5 \times 0.4 \times 0.6 = 0.12\]
+    </div>
+  </div>
+
+  <div class="note-box">
+    <div class="note-label">💡 Why Does This Work?</div>
+    <p>By the Markov property, conditioning on the full history collapses to conditioning only on the immediately previous state. This turns a complex joint probability into a simple product of one-step transition probabilities.</p>
+  </div>
+
+  <h3>4.3 — Multi-Step Probabilities: Sum Over Intermediate States</h3>
+
+  <p>What about 2-step probabilities like \(P(X_2 = b \mid X_0 = a)\)? We must <strong>sum over all possible intermediate states</strong> \(X_1\):</p>
+
+  <div class="chalkboard">
+    <div class="math-line">
+      \[P(X_2 = b \mid X_0 = a) = \sum_{z \in S} P(X_2=b \mid X_1=z)\, P(X_1=z \mid X_0=a)\]
+    </div>
+    <div class="math-line">
+      \[= p(a,b)\,p(a,a) + p(b,b)\,p(a,b)\]
+    </div>
+  </div>
+
+  <p>Let's work through the example from Slide 11 with a new matrix:</p>
+
+  <div class="example-box">
+    <div class="ex-label">Worked Example (Slides 11–13): New Markov Chain</div>
+    <p>State space \(S = \{a, b\}\), transition matrix:</p>
+    <div style="text-align:center; margin: 0.8rem 0;">
+      \[ P = \begin{pmatrix} 1/3 & 2/3 \\ 1/2 & 1/2 \end{pmatrix} \]
+    </div>
+    <p>Find \(P(X_2 = b \mid X_0 = a)\):</p>
+    <div style="margin-left:1rem;">
+      <p>\(= p(a,b)\,p(a,a) + p(b,b)\,p(a,b)\)</p>
+      <p>\(= \tfrac{2}{3} \cdot \tfrac{1}{3} + \tfrac{1}{2} \cdot \tfrac{2}{3}\)</p>
+      <p>\(= \tfrac{2}{9} + \tfrac{2}{6} = \tfrac{2}{9} + \tfrac{3}{9} = \tfrac{5}{9}\)</p>
+    </div>
+    <p style="color: var(--accent4);">Answer: \(P(X_2 = b \mid X_0 = a) = \dfrac{5}{9} \approx 0.556\)</p>
+  </div>
+
+  <!-- Interactive calculator -->
+  <div class="calculator">
+    <h4>🔢 Interactive: 2-Step Probability Calculator</h4>
+    <p style="color:var(--muted); font-size:0.85rem; margin-bottom:1rem;">Use the matrix from the worked example above. Enter your own matrix values below.</p>
+    <div class="calc-row">
+      <label>p(a,a)</label><input id="paa" type="number" min="0" max="1" step="0.01" value="0.333" style="width:80px">
+      <label>p(a,b)</label><input id="pab" type="number" min="0" max="1" step="0.01" value="0.667" style="width:80px">
+    </div>
+    <div class="calc-row">
+      <label>p(b,a)</label><input id="pba" type="number" min="0" max="1" step="0.01" value="0.5" style="width:80px">
+      <label>p(b,b)</label><input id="pbb" type="number" min="0" max="1" step="0.01" value="0.5" style="width:80px">
+    </div>
+    <div class="calc-row">
+      <label>Start</label>
+      <select id="startState"><option value="a">a</option><option value="b">b</option></select>
+      <label>End (at n=2)</label>
+      <select id="endState"><option value="a">a</option><option value="b" selected>b</option></select>
+      <button class="calc-btn" onclick="calc2step()">Calculate</button>
+    </div>
+    <div class="calc-result" id="calcResult">Result will appear here…</div>
+  </div>
+
+  <div class="diagram-wrap">
+    <svg width="600" height="200" viewBox="0 0 600 200">
+      <!-- Path diagram for 2-step: a → ? → b -->
+      <text x="300" y="22" text-anchor="middle" fill="#9095b8" font-size="12">Two paths from a to b in 2 steps</text>
+      <!-- Path 1: a→a→b -->
+      <circle cx="80" cy="80" r="22" fill="rgba(124,106,247,0.2)" stroke="#7c6af7" stroke-width="2"/>
+      <text x="80" y="77" text-anchor="middle" fill="#e8eaf6" font-size="13">X₀=a</text>
+      <circle cx="260" cy="50" r="22" fill="rgba(124,106,247,0.15)" stroke="#7c6af7" stroke-width="1.5"/>
+      <text x="260" y="47" text-anchor="middle" fill="#cdd1f0" font-size="12">X₁=a</text>
+      <circle cx="460" cy="80" r="22" fill="rgba(95,230,160,0.2)" stroke="#5fe6a0" stroke-width="2"/>
+      <text x="460" y="77" text-anchor="middle" fill="#e8eaf6" font-size="13">X₂=b</text>
+      <line x1="102" y1="73" x2="237" y2="56" stroke="#7c6af7" stroke-width="1.5"/>
+      <line x1="282" y1="56" x2="437" y2="73" stroke="#7c6af7" stroke-width="1.5"/>
+      <text x="162" y="53" fill="#7c6af7" font-size="11">p(a,a)=1/3</text>
+      <text x="340" y="53" fill="#7c6af7" font-size="11">p(a,b)=2/3</text>
+      <!-- Path 2: a→b→b -->
+      <circle cx="260" cy="140" r="22" fill="rgba(95,196,240,0.15)" stroke="#5fc4f0" stroke-width="1.5"/>
+      <text x="260" y="137" text-anchor="middle" fill="#cdd1f0" font-size="12">X₁=b</text>
+      <line x1="102" y1="87" x2="237" y2="133" stroke="#5fc4f0" stroke-width="1.5"/>
+      <line x1="282" y1="133" x2="437" y2="87" stroke="#5fc4f0" stroke-width="1.5"/>
+      <text x="148" y="126" fill="#5fc4f0" font-size="11">p(a,b)=2/3</text>
+      <text x="338" y="126" fill="#5fc4f0" font-size="11">p(b,b)=1/2</text>
+      <!-- Labels for paths -->
+      <text x="300" y="175" text-anchor="middle" fill="#f5f5f0" font-size="11">Path 1 prob: (1/3)(2/3) = 2/9 &nbsp;&nbsp;|&nbsp;&nbsp; Path 2 prob: (2/3)(1/2) = 1/3</text>
+      <text x="300" y="193" text-anchor="middle" fill="#5fe6a0" font-size="12">Total: 2/9 + 1/3 = 5/9</text>
+    </svg>
+    <div class="diagram-caption">Summing over two paths (via X₁=a and X₁=b) to find P(X₂=b | X₀=a).</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 5: RANDOM WALK ─── -->
+<section id="walk">
+  <h2><span class="num">5</span> Things Built from i.i.d. Sequences</h2>
+
+  <h3>5.1 — Markov Chains from i.i.d. (Generalized)</h3>
+
+  <p>Your lecturer noted (Slide 14) that the two-state construction generalizes: we can build any <strong>finite-state Markov chain</strong> from an i.i.d. Uniform[0,1] sequence. The idea is the same — use the uniform draw to "decide" which state to jump to next, based on the current state's transition probabilities.</p>
+
+  <h3>5.2 — The Random Walk (Slides 14–16)</h3>
+
+  <p>Another fundamental process built from i.i.d. variables is the <strong>random walk</strong>:</p>
+
+  <div class="def-box">
+    <div class="def-title">Definition: Random Walk</div>
+    <p>Given an i.i.d. sequence \((\xi_n)_{n \geq 1}\) (the <em>increments</em>), define:</p>
+    <div style="text-align:center; margin-top:0.8rem;">
+      \[ X_n = \xi_1 + \xi_2 + \cdots + \xi_n \]
+    </div>
+    <p style="margin-top:0.8rem;">Then \((X_n)\) is called a <strong>random walk with increments \((\xi_n)\)</strong>.</p>
+  </div>
+
+  <h3>5.3 — The Simple Symmetric Random Walk</h3>
+
+  <p>The most important special case: each \(\xi_n\) is +1 or −1 with equal probability:</p>
+
+  <div class="chalkboard">
+    <div class="math-line">\[P(\xi_n = +1) = P(\xi_n = -1) = \tfrac{1}{2}\]</div>
+    <p style="text-align:center; margin-top:0.3rem; color:#9095b8;">Example: flip a fair coin; +1 for Heads, −1 for Tails</p>
+  </div>
+
+  <p>Key properties (computed on Slide 16):</p>
+
+  <div class="two-col">
+    <div class="def-box">
+      <div class="def-title">Expected Value</div>
+      <p>\(\mathbb{E}[X_n] = 0\) for all \(n\)</p>
+      <p style="color: var(--muted); font-size:0.9rem; margin-top:0.4rem;">Intuition: equal chance of going up or down, so the walk is centered at 0.</p>
+    </div>
+    <div class="def-box">
+      <div class="def-title">Variance</div>
+      <p>\(\text{Var}(X_n) = \sum_{i=1}^n \text{Var}(\xi_i) = n\)</p>
+      <p style="color: var(--muted); font-size:0.9rem; margin-top:0.4rem;">The walk spreads out like \(\sqrt{n}\) over time (standard deviation = \(\sqrt{n}\)).</p>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <div class="note-label">📐 Connection to Binomial</div>
+    <p>Your lecturer noted: \(X_n \stackrel{d}{=} 2Y_n - n\) where \(Y_n \sim \text{Bin}(n, \tfrac{1}{2})\). This is because \(X_n = (\text{number of heads}) - (\text{number of tails}) = 2(\text{heads}) - n\). The \(\stackrel{d}{=}\) symbol means "equal in distribution" (same probability law, but they're not the same random variable).</p>
+  </div>
+
+  <!-- Animated random walk -->
+  <div class="diagram-wrap">
+    <canvas id="rwCanvas" width="620" height="220"></canvas>
+    <div style="margin-top:0.8rem; display:flex; gap:0.75rem; justify-content:center; flex-wrap:wrap;">
+      <button class="fc-btn" onclick="simulateWalk()">▶ New Walk</button>
+      <button class="fc-btn" onclick="simulate5Walks()">▶ 5 Walks</button>
+      <button class="fc-btn" onclick="clearCanvas()">Clear</button>
+    </div>
+    <div class="diagram-caption">Simulation of the simple symmetric random walk. Each step: +1 (Heads) or −1 (Tails) with equal probability. Click to generate new paths.</div>
+  </div>
+
+  <h3>5.4 — The Maximum Process</h3>
+
+  <p>From any stochastic process \((X_n)\) on \(\mathbb{R}\), we can build new processes. A key example (Slide 17) is the <strong>maximum process</strong>:</p>
+
+  <div class="def-box">
+    <div class="def-title">Maximum Process</div>
+    <p>If \((X_n)\) is any stochastic process on \(\mathbb{R}\), let:</p>
+    <div style="text-align:center; margin-top:0.8rem;">
+      \[ Y_n = \max_{m \leq n} X_m \]
+    </div>
+    <p style="margin-top:0.8rem;">Then \((Y_n)\) is a new stochastic process: the running maximum of \((X_n)\).</p>
+    <p style="color:var(--muted); margin-top:0.4rem;">Note: \((Y_n)\) is <em>non-decreasing</em>: \(Y_{n+1} \geq Y_n\) always.</p>
+  </div>
+</section>
+
+<!-- ─── SUMMARY TABLE ─── -->
+<section>
+  <h2><span class="num">6</span> Summary: Key Concepts at a Glance</h2>
+
+  <table>
+    <thead>
+      <tr><th>Concept</th><th>Definition</th><th>Key Property</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Stochastic Process</strong></td><td>Collection of RVs \((X_n)\) indexed by time, on common \((\Omega, \mathcal{A}, P)\)</td><td>Describes random evolution over time</td></tr>
+      <tr><td><strong>State Space \(S\)</strong></td><td>Set of possible values each \(X_n\) can take</td><td>Finite, countable, or \(\mathbb{R}\)</td></tr>
+      <tr><td><strong>i.i.d. Sequence</strong></td><td>Same distribution + mutual independence</td><td>\(P(X_i \in A_i\;\forall i) = \prod P(X_i \in A_i)\)</td></tr>
+      <tr><td><strong>Markov Property</strong></td><td>Future depends only on present state, not past</td><td>\(P(X_{n+1}=y|X_n=x, \text{past}) = p(x,y)\)</td></tr>
+      <tr><td><strong>Transition Prob.</strong></td><td>\(p(x,y) = P(X_1=y|X_0=x)\)</td><td>Rows of matrix sum to 1</td></tr>
+      <tr><td><strong>Transition Matrix</strong></td><td>\(P_{xy} = p(x,y)\) for all \(x,y \in S\)</td><td>Powers \(P^n\) give n-step probs</td></tr>
+      <tr><td><strong>Random Walk</strong></td><td>\(X_n = \xi_1 + \cdots + \xi_n\), \(\xi_i\) i.i.d.</td><td>\(\mathbb{E}[X_n]=0\), \(\text{Var}(X_n)=n\) (symmetric)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<hr class="divider">
+
+<!-- ─── FLASHCARDS ─── -->
+<section id="flashcards">
+  <h2><span class="num">7</span> Flashcards — Test Your Understanding</h2>
+  <p>Click any card to reveal the answer. Use the arrows to navigate, or shuffle for a random order.</p>
+
+  <div class="fc-controls">
+    <button class="fc-btn" onclick="shuffleCards()">🔀 Shuffle</button>
+    <button class="fc-btn" onclick="resetCards()">↺ Reset</button>
+    <span class="fc-progress" id="fcProgress">Card 1 / 14</span>
+  </div>
+
+  <div class="card-container">
+    <div class="card" id="flashcard" onclick="flipCard()">
+      <div class="card-face card-front">
+        <div class="card-tag" id="cardTag">Definition</div>
+        <div class="card-q" id="cardQ">Loading…</div>
+        <div class="card-hint">Click to reveal answer</div>
+      </div>
+      <div class="card-face card-back">
+        <div class="card-a" id="cardA">Loading…</div>
+        <div class="card-formula" id="cardF"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fc-nav">
+    <button onclick="prevCard()">←</button>
+    <div class="fc-dots" id="fcDots"></div>
+    <button onclick="nextCard()">→</button>
+  </div>
+</section>
+
+<script src="script.js"></script>
+
+<style>
+  .lec-nav-l1 {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.4rem;
+    margin: 2.5rem 0 1rem;
+    flex-wrap: wrap; gap: 1rem;
+    max-width: 960px; margin-left: auto; margin-right: auto;
+  }
+  .lec-nav-l1 a {
+    color: var(--accent2); text-decoration: none;
+    font-size: 0.9rem; font-family: monospace;
+    padding: 0.45rem 1rem; border-radius: 7px;
+    border: 1px solid rgba(95,196,240,0.3);
+    transition: all 0.2s;
+  }
+  .lec-nav-l1 a:hover { background: rgba(95,196,240,0.12); }
+  .lec-nav-l1 .nav-title { color: var(--muted); font-size: 0.8rem; font-family: monospace; letter-spacing: 2px; text-transform: uppercase; }
+</style>
+<div class="lec-nav-l1">
+  <span class="nav-title">End of Lecture 1</span>
+  <a href="Lecture2_StochasticProcesses.html">Lecture 2: Multi-step Probs, Stopping Times &amp; Recurrence →</a>
+</div>
+
+</body>
+</html>
