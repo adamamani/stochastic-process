@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 3 — Stochastic Processes</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .proof-block {
+    background: linear-gradient(135deg, rgba(95,196,240,0.07), rgba(124,106,247,0.05));
+    border: 1px solid rgba(95,196,240,0.3);
+    border-left: 4px solid var(--accent2);
+    border-radius: 10px;
+    padding: 1.4rem 1.6rem;
+    margin: 1.5rem 0;
+  }
+  .proof-block .proof-title {
+    font-family: 'Courier New', monospace;
+    font-size: 0.72rem; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--accent2); margin-bottom: 0.8rem;
+  }
+  .proof-step {
+    display: flex; gap: 0.8rem; align-items: flex-start;
+    margin: 0.7rem 0;
+  }
+  .step-num {
+    background: var(--accent2); color: #0f1117;
+    border-radius: 50%; width: 22px; height: 22px; min-width: 22px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 700; font-family: monospace;
+    margin-top: 0.15rem;
+  }
+  .step-content { color: var(--chalk); font-size: 0.95rem; line-height: 1.7; }
+  .qed { text-align: right; color: var(--accent2); font-size: 1.2rem; margin-top: 0.5rem; }
+
+  .lec-nav {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.4rem;
+    margin: 2.5rem 0 1rem;
+    flex-wrap: wrap; gap: 1rem;
+  }
+  .lec-nav a {
+    color: var(--accent2); text-decoration: none;
+    font-size: 0.9rem; font-family: monospace;
+    padding: 0.45rem 1rem; border-radius: 7px;
+    border: 1px solid rgba(95,196,240,0.3);
+    transition: all 0.2s;
+  }
+  .lec-nav a:hover { background: rgba(95,196,240,0.12); }
+  .lec-nav a.home-btn {
+    color: var(--accent4);
+    border-color: rgba(95,230,160,0.35);
+  }
+  .lec-nav a.home-btn:hover { background: rgba(95,230,160,0.1); }
+  .lec-nav .nav-title { color: var(--muted); font-size: 0.8rem; font-family: monospace; letter-spacing: 2px; text-transform: uppercase; }
+
+  .claims-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin: 1.5rem 0;
+  }
+  @media(max-width: 640px) { .claims-grid { grid-template-columns: 1fr; } }
+  .claim-box {
+    background: rgba(124,106,247,0.08);
+    border: 1px solid rgba(124,106,247,0.35);
+    border-radius: 10px;
+    padding: 1.2rem 1.4rem;
+  }
+  .claim-box .claim-title {
+    font-family: monospace; font-size: 0.72rem; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 0.5rem;
+  }
+  .claim-box p { color: var(--text); margin: 0.3rem 0; font-size: 0.95rem; }
+
+  .partition-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+  }
+
+  .stat-calc {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+  }
+  .stat-calc h4 { color: var(--accent2); margin-bottom: 1rem; font-size: 1rem; }
+  .stat-calc .calc-row { display: flex; gap: 0.75rem; margin-bottom: 0.8rem; align-items: center; flex-wrap: wrap; }
+  .stat-calc .calc-row label { color: var(--muted); font-size: 0.85rem; min-width: 130px; }
+  .stat-calc input {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); padding: 0.4rem 0.6rem; border-radius: 6px;
+    font-family: monospace; width: 80px;
+  }
+  .stat-result {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1rem 1.2rem;
+    font-family: monospace; color: var(--accent4); font-size: 0.9rem;
+    min-height: 42px; margin-top: 0.5rem;
+  }
+  .bar-chart { display: flex; gap: 16px; align-items: flex-end; height: 80px; margin: 1rem 0; }
+  .bar-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .bar { width: 50px; background: var(--accent); border-radius: 4px 4px 0 0; transition: height 0.5s; }
+  .bar-label { font-size: 0.75rem; font-family: monospace; color: var(--muted); }
+  .bar-val { font-size: 0.75rem; font-family: monospace; color: var(--accent4); }
+
+  .thm-box {
+    background: linear-gradient(135deg, rgba(124,106,247,0.1), rgba(95,196,240,0.05));
+    border: 1px solid rgba(124,106,247,0.4);
+    border-left: 4px solid var(--accent);
+    border-radius: 10px;
+    padding: 1.3rem 1.5rem;
+    margin: 1.5rem 0;
+  }
+  .thm-box .thm-title {
+    font-family: 'Courier New', monospace;
+    font-size: 0.72rem; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 0.7rem;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="label">S403 · Stochastic Processes</div>
+  <h1>Lecture 3: Recurrence, Transience &amp; Stationary Distributions</h1>
+  <p class="subtitle">Classifying states, closed sets, infinite state spaces, and long-run behaviour</p>
+  <div class="meta">
+    <span>📖 Sections 1.3–1.5 (Essentials of SP)</span>
+    <span>🎯 Undergraduate Data Science</span>
+    <span>⏱ ~70 min read</span>
+  </div>
+</header>
+
+<!-- NAVIGATION -->
+<nav>
+  <span class="nav-label">Jump to:</span>
+  <a href="#overview">Overview</a>
+  <a href="#transrec">Transience &amp; Recurrence</a>
+  <a href="#classify">Classification</a>
+  <a href="#infinite">Infinite State Space</a>
+  <a href="#stationary">Stationary Dist.</a>
+  <a href="#convergence">Convergence</a>
+  <a href="#flashcards">Flashcards</a>
+</nav>
+
+<div class="container">
+
+<!-- ─── LECTURE NAV ─── -->
+<div class="lec-nav">
+  <a href="lecture-02.html">← Lecture 2: Deeper Structure</a>
+  <a href="../index.html" class="home-btn">⌂ All Lectures</a>
+  <span style="color:var(--muted); font-size:0.85rem; font-family:monospace;">Lecture 4 coming soon →</span>
+</div>
+
+<!-- ─── SECTION 0: OVERVIEW ─── -->
+<section id="overview">
+  <h2><span class="num">0</span> What Are We Studying Today?</h2>
+
+  <p>In Lecture 2 you saw that states of a Markov chain can be <em>transient</em> (the chain eventually escapes and never returns) or <em>recurrent</em> (the chain returns infinitely often). Today we prove exactly <em>when</em> each case occurs, develop a complete classification of all states, and ask a new question:</p>
+
+  <div class="def-box">
+    <div class="def-title">The Big Questions for Lecture 3</div>
+    <p><strong>1. Finite state spaces:</strong> Given a state \(x\), when is it transient vs. recurrent? We prove two clean criteria.</p>
+    <p><strong>2. Infinite state spaces:</strong> What goes wrong? Closed irreducible sets no longer guarantee recurrence.</p>
+    <p><strong>3. Long-run averages:</strong> How much time does the chain spend in each state? This leads to <em>stationary distributions</em>.</p>
+    <p><strong>4. Convergence:</strong> Under what conditions does \(p^n(x,y)\) converge as \(n \to \infty\)?</p>
+  </div>
+
+  <h3>Today's Agenda</h3>
+  <div class="chalkboard">
+    \(\bullet\) Classifying recurrence/transience for finite \(S\) — two theorems with proofs.<br>
+    \(\bullet\) Irreducibility &amp; closed sets: definitions and the state partition theorem.<br>
+    \(\bullet\) What changes when \(|S| = \infty\) — counterexamples and the renewal chain.<br>
+    \(\bullet\) Stationary distributions: definition, computation, and connection to recurrence.<br>
+    \(\bullet\) Convergence theorems: when does \(p^n(x,y) \to \pi(y)\)?
+  </div>
+</section>
+
+<!-- ─── SECTION 1: TRANSIENCE & RECURRENCE ─── -->
+<section id="transrec">
+  <h2><span class="num">1</span> Recurrence &amp; Transience for Finite \(S\)</h2>
+
+  <p>Recall from Lecture 2: state \(x\) is <strong>recurrent</strong> if \(\rho_{xx} = P_x(T_x^+ < \infty) = 1\) and <strong>transient</strong> if \(\rho_{xx} < 1\). We now prove two theorems giving clean conditions for each case when the state space is finite.</p>
+
+  <h3>1.1 Transience Theorem</h3>
+
+  <div class="thm-box">
+    <div class="thm-title">Theorem — Transience Criterion</div>
+    <p>Suppose \(x \to y\) but \(y \not\to x\) (i.e., \(y\) is reachable from \(x\) but \(x\) is not reachable from \(y\)). Then \(x\) is <strong>transient</strong>.</p>
+  </div>
+
+  <div class="proof-block">
+    <div class="proof-title">Proof</div>
+    <div class="proof-step">
+      <div class="step-num">1</div>
+      <div class="step-content">Since \(x \to y\), there exists a path \(x = x_0, x_1, \ldots, x_k = y\) such that
+      \[P(X_i = x_i \;\forall\, i \leq k) > 0\]
+      and we may choose the path so that \(x_i \neq x\) for all \(i > 0\) (i.e., the path leaves \(x\) immediately and doesn't return before reaching \(y\)).</div>
+    </div>
+    <div class="proof-step">
+      <div class="step-num">2</div>
+      <div class="step-content">On the event \(\{X_i = x_i \;\forall\, i \leq k\}\), we have \(X_k = y\). Since \(y \not\to x\), the chain can never reach \(x\) from \(y\). Therefore \(T_x^+ = \infty\) on this event.</div>
+    </div>
+    <div class="proof-step">
+      <div class="step-num">3</div>
+      <div class="step-content">Thus:
+      \[p_{xx} = P_x(T_x^+ < \infty) \leq 1 - P(X_i = x_i\;\forall\, i \leq k) < 1\]
+      which means \(x\) is transient.</div>
+    </div>
+    <div class="qed">■</div>
+  </div>
+
+  <div class="note-box">
+    <strong>Intuition:</strong> If the chain can reach a "one-way exit" state \(y\) from \(x\), there's a positive probability of getting trapped in the part of the chain unreachable from \(y\), never returning to \(x\).
+  </div>
+
+  <h3>1.2 Recurrence Theorem</h3>
+
+  <div class="thm-box">
+    <div class="thm-title">Theorem — Recurrence Criterion (Finite State Space)</div>
+    <p>Suppose \(|S| < \infty\) and state \(x\) satisfies: for every \(y\) with \(x \to y\), we also have \(y \to x\). Then \(x\) is <strong>recurrent</strong>.</p>
+  </div>
+
+  <p>The condition says: every state reachable from \(x\) can also return to \(x\). Equivalently, the set \(A_x = \{y : x \to y\}\) is closed and irreducible (all states communicate with \(x\)).</p>
+
+  <div class="proof-block">
+    <div class="proof-title">Proof</div>
+    <div class="proof-step">
+      <div class="step-num">1</div>
+      <div class="step-content"><strong>The set \(A_x\) is closed.</strong> By assumption, for any \(y \in A_x\), we have \(y \to x\), which means \(x \in A_x\). Moreover, if \(y \in A_x\) and \(y \to z\), then \(x \to y \to z\) so \(z \in A_x\). Hence \(A_x\) is closed under one-step transitions. In particular:
+      \[P(X_n \in A_x \mid X_0 = x) = 1 \quad \forall n.\]</div>
+    </div>
+    <div class="proof-step">
+      <div class="step-num">2</div>
+      <div class="step-content"><strong>Set up uniform return bounds.</strong> For each \(y \in A_x\), since \(y \to x\), there exists \(n(x,y)\) with \(P_{n(x,y)}(x,y) > 0\). Since \(|S| < \infty\), the set \(A_x\) is finite, so we can define:
+      \[N = \max_{y \in A_x} n(x,y) < \infty, \qquad \alpha = \min_{y \in A_x} P_{n(x,y)}(x,y) > 0.\]</div>
+    </div>
+    <div class="proof-step">
+      <div class="step-num">3</div>
+      <div class="step-content"><strong>Geometric bound on the return time.</strong> For any \(y \in A_x\):
+      \[P(T_x^+ \leq N \mid X_0 = y) \geq \alpha > 0.\]
+      By the Markov property applied iteratively:
+      \[P(T_x^+ > kN \mid X_0 = x) \leq (1 - \alpha)^k.\]
+      Interpretation: each window of \(N\) steps gives at least probability \(\alpha\) of returning. The number of windows until first return is stochastically dominated by a \(\text{Geom}(\alpha)\) random variable.</div>
+    </div>
+    <div class="proof-step">
+      <div class="step-num">4</div>
+      <div class="step-content"><strong>Conclude recurrence.</strong> As \(k \to \infty\):
+      \[P(T_x^+ = \infty) \leq \lim_{k \to \infty} P(T_x^+ > kN) = 0.\]
+      Therefore \(P_x(T_x^+ < \infty) = 1\), so \(x\) is recurrent.</div>
+    </div>
+    <div class="qed">■</div>
+  </div>
+
+  <div class="example-box">
+    <div class="ex-label">Key Takeaway — Why Finiteness Matters</div>
+    <p>The proof critically uses \(|S| < \infty\) to guarantee \(N < \infty\) and \(\alpha > 0\). If the state space is infinite, the maximum \(N\) may be infinite or the minimum \(\alpha\) may be 0 — the argument breaks down. We'll see a concrete counterexample in Section 3.</p>
+  </div>
+</section>
+
+<!-- ─── SECTION 2: CLASSIFICATION ─── -->
+<section id="classify">
+  <h2><span class="num">2</span> Classification of States</h2>
+
+  <p>The theorems above lead to a complete structural picture of any Markov chain.</p>
+
+  <div class="def-box">
+    <div class="def-title">Definitions — Irreducible & Closed Sets</div>
+    <p>A subset \(A \subseteq S\) is:</p>
+    <p>\(\bullet\) <strong>Irreducible</strong> if \(x \to y\) and \(y \to x\) for all \(x, y \in A\) (all states communicate).</p>
+    <p>\(\bullet\) <strong>Closed</strong> if for all \(x \in A\) and all \(y\) with \(p(x,y) > 0\), we have \(y \in A\). (Once inside, the chain never leaves.)</p>
+  </div>
+
+  <h3>2.1 The State Partition Theorem</h3>
+
+  <div class="thm-box">
+    <div class="thm-title">Theorem — Partition of the State Space</div>
+    <p>For any Markov chain on \(S\), there exists a partition:
+    \[S = C_1 \cup C_2 \cup \cdots \cup C_k \cup T\]
+    where each \(C_i\) is an <strong>irreducible closed set</strong> (all states in \(C_i\) are recurrent), and \(T\) is the set of <strong>transient states</strong>:
+    \[T = \{x \in S : \exists\, y \text{ with } x \to y \text{ and } y \not\to x\}.\]
+    Furthermore, each \(C_i = A_x = \{y : x \to y\}\) for any \(x \in C_i\).</p>
+  </div>
+
+  <div class="partition-diagram">
+    <svg viewBox="0 0 560 220" style="width:100%; max-width:560px; display:block; margin:0 auto;">
+      <!-- C1 bubble -->
+      <ellipse cx="110" cy="110" rx="90" ry="75" fill="rgba(124,106,247,0.15)" stroke="#7c6af7" stroke-width="2" stroke-dasharray="0"/>
+      <text x="110" y="65" text-anchor="middle" fill="#7c6af7" font-family="monospace" font-size="13" font-weight="bold">C₁</text>
+      <!-- arrows inside C1 -->
+      <circle cx="80" cy="105" r="6" fill="#7c6af7"/>
+      <circle cx="130" cy="90" r="6" fill="#7c6af7"/>
+      <circle cx="125" cy="140" r="6" fill="#7c6af7"/>
+      <path d="M86,105 Q105,85 124,90" stroke="#7c6af7" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+      <path d="M130,96 Q135,120 131,134" stroke="#7c6af7" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+      <path d="M119,140 Q95,135 82,111" stroke="#7c6af7" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+      <!-- C2 bubble -->
+      <ellipse cx="330" cy="110" rx="80" ry="65" fill="rgba(95,196,240,0.12)" stroke="#5fc4f0" stroke-width="2"/>
+      <text x="330" y="65" text-anchor="middle" fill="#5fc4f0" font-family="monospace" font-size="13" font-weight="bold">C₂</text>
+      <circle cx="305" cy="100" r="6" fill="#5fc4f0"/>
+      <circle cx="355" cy="100" r="6" fill="#5fc4f0"/>
+      <circle cx="330" cy="145" r="6" fill="#5fc4f0"/>
+      <path d="M311,100 Q330,85 349,100" stroke="#5fc4f0" stroke-width="1.5" fill="none" marker-end="url(#arr2)"/>
+      <path d="M355,106 Q350,130 336,143" stroke="#5fc4f0" stroke-width="1.5" fill="none" marker-end="url(#arr2)"/>
+      <path d="M324,145 Q308,135 307,106" stroke="#5fc4f0" stroke-width="1.5" fill="none" marker-end="url(#arr2)"/>
+      <!-- T bubble (dashed) -->
+      <ellipse cx="480" cy="110" rx="60" ry="55" fill="rgba(240,160,95,0.08)" stroke="#f0a05f" stroke-width="2" stroke-dasharray="5,3"/>
+      <text x="480" y="68" text-anchor="middle" fill="#f0a05f" font-family="monospace" font-size="13" font-weight="bold">T</text>
+      <circle cx="462" cy="105" r="5" fill="#f0a05f"/>
+      <circle cx="498" cy="120" r="5" fill="#f0a05f"/>
+      <!-- T -> C2 arrow -->
+      <path d="M420,110 Q400,110 413,110" stroke="#f0a05f" stroke-width="1.5" fill="none" stroke-dasharray="4,2" marker-end="url(#arr3)"/>
+      <!-- Labels -->
+      <text x="110" y="200" text-anchor="middle" fill="#9095b8" font-family="Georgia,serif" font-size="11">recurrent class</text>
+      <text x="330" y="200" text-anchor="middle" fill="#9095b8" font-family="Georgia,serif" font-size="11">recurrent class</text>
+      <text x="480" y="185" text-anchor="middle" fill="#9095b8" font-family="Georgia,serif" font-size="11">transient</text>
+      <text x="480" y="198" text-anchor="middle" fill="#9095b8" font-family="Georgia,serif" font-size="11">states</text>
+      <!-- arrow markers -->
+      <defs>
+        <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#7c6af7"/>
+        </marker>
+        <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#5fc4f0"/>
+        </marker>
+        <marker id="arr3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#f0a05f"/>
+        </marker>
+      </defs>
+    </svg>
+    <p style="text-align:center; color:var(--muted); font-size:0.82rem; margin-top:0.5rem; font-style:italic;">
+      State space partition: irreducible closed sets C₁, C₂ (recurrent) and transient set T. Transient states can jump to recurrent classes but never escape back.
+    </p>
+  </div>
+
+  <div class="note-box">
+    <strong>Key Properties of the Partition:</strong><br>
+    &bull; Once the chain enters a recurrent class \(C_i\), it stays there forever.<br>
+    &bull; Transient states are "visited only finitely often" with probability 1.<br>
+    &bull; A transient state may reach a recurrent class, after which the chain behaves as if started in \(C_i\).<br>
+    &bull; For finite \(S\): every state is either transient or in some \(C_i\). There must be at least one recurrent class.
+  </div>
+
+  <div class="example-box">
+    <div class="ex-label">Example — Reading the Partition</div>
+    <p>Consider states \(\{a, b, c, d\}\) with transitions: \(a \leftrightarrow b\) (communicate), \(c \leftrightarrow d\) (communicate), \(a \to c\) (but \(c \not\to a\)), \(d \to a\) (creating a cycle \(d \to a \to c\)).</p>
+    <p>Actually let's use a cleaner example: \(S = \{1,2,3,4\}\), where \(\{1,2\}\) form a closed irreducible set, \(\{3,4\}\) form another, and \(0\) is transient (it can reach both classes but return from neither). Then \(C_1 = \{1,2\}\), \(C_2 = \{3,4\}\), \(T = \{0\}\).</p>
+  </div>
+</section>
+
+<!-- ─── SECTION 3: INFINITE STATE SPACE ─── -->
+<section id="infinite">
+  <h2><span class="num">3</span> Infinite State Space — What Changes?</h2>
+
+  <p>For finite state spaces, being in a closed irreducible set guaranteed recurrence. For <em>infinite</em> state spaces, this is no longer true.</p>
+
+  <div class="def-box" style="border-left-color:var(--accent3);">
+    <div class="def-title" style="color:var(--accent3);">Important Warning</div>
+    <p>When \(|S| = \infty\): a chain can be <strong>closed and irreducible yet have all states transient</strong>.</p>
+    <p>The proof of the Recurrence Theorem used \(N = \max_{y \in A_x} n(x,y) < \infty\), which requires \(A_x\) finite — i.e., \(|S| < \infty\).</p>
+  </div>
+
+  <h3>3.1 Counterexample: Random Walk with Drift</h3>
+
+  <div class="example-box">
+    <div class="ex-label">Example — Biased Random Walk on ℤ</div>
+    <p>Let \((\xi_n)_{n \geq 1}\) be i.i.d. random variables with \(\mu = E[\xi_n] \neq 0\). Define the random walk:
+    \[X_n = \sum_{i=1}^n \xi_i.\]
+    The chain on \(S = \mathbb{Z}\) (or \(\mathbb{N}\)) is irreducible when \(\xi_n \in \{-1,+1\}\), but if \(\mu \neq 0\), <strong>all states are transient</strong>.</p>
+    <p><strong>Why?</strong> By the Strong Law of Large Numbers:
+    \[\frac{X_n}{n} - \mu \xrightarrow{n \to \infty} 0 \quad \text{almost surely}.\]
+    So for any \(\varepsilon > 0\), eventually \(|X_n - n\mu| \leq n\varepsilon\). If \(\mu > 0\), then eventually \(X_n > a\) for any fixed \(a\), meaning the chain drifts to \(+\infty\) and never returns to any fixed state.</p>
+  </div>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 500 160" style="width:100%; max-width:500px; display:block; margin:0 auto;">
+      <!-- Axes -->
+      <line x1="40" y1="80" x2="470" y2="80" stroke="var(--muted)" stroke-width="1.5"/>
+      <text x="475" y="84" fill="var(--muted)" font-size="12" font-family="monospace">n</text>
+      <line x1="40" y1="140" x2="40" y2="20" stroke="var(--muted)" stroke-width="1.5"/>
+      <!-- nmu line (white) -->
+      <line x1="40" y1="80" x2="460" y2="30" stroke="white" stroke-width="2"/>
+      <text x="430" y="28" fill="white" font-size="11" font-family="monospace">nμ</text>
+      <!-- n(mu+eps) upper bound (red) -->
+      <line x1="40" y1="80" x2="460" y2="10" stroke="#f0a05f" stroke-width="1.8"/>
+      <text x="355" y="12" fill="#f0a05f" font-size="10" font-family="monospace">n(μ+ε)</text>
+      <!-- n(mu-eps) lower bound (red) -->
+      <line x1="40" y1="80" x2="460" y2="50" stroke="#f0a05f" stroke-width="1.8"/>
+      <text x="395" y="55" fill="#f0a05f" font-size="10" font-family="monospace">n(μ−ε)</text>
+      <!-- dashed line at a -->
+      <line x1="40" y1="110" x2="470" y2="110" stroke="#5fe6a0" stroke-width="1" stroke-dasharray="5,3"/>
+      <text x="20" y="114" fill="#5fe6a0" font-size="12" font-family="monospace">a</text>
+      <!-- x-axis labels -->
+      <text x="37" y="96" fill="var(--muted)" font-size="10" font-family="monospace">0</text>
+      <!-- caption -->
+      <text x="250" y="155" text-anchor="middle" fill="var(--muted)" font-size="10" font-family="Georgia,serif" font-style="italic">
+        X_n is sandwiched between n(μ±ε); eventually X_n &gt; a for any fixed a.
+      </text>
+    </svg>
+  </div>
+
+  <h3>3.2 The Renewal Markov Chain</h3>
+
+  <p>This is a canonical example of an infinite-state chain where recurrence vs. transience depends on a simple sum condition.</p>
+
+  <div class="def-box">
+    <div class="def-title">The Renewal Chain</div>
+    <p><strong>State space:</strong> \(S = \mathbb{N} = \{0, 1, 2, \ldots\}\)</p>
+    <p><strong>Transition probabilities:</strong> For each \(n \geq 0\):
+    \[p(n, n+1) + p(n, 0) = 1, \qquad \text{where } p(n, 0) \geq 0.\]
+    That is, from state \(n\), the chain either moves forward to \(n+1\) (with prob \(1 - p(n,0)\)) or resets to 0 (with prob \(p(n,0)\)).</p>
+  </div>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 500 120" style="width:100%; max-width:500px; display:block; margin:0 auto;">
+      <defs>
+        <marker id="rnarr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#5fc4f0"/>
+        </marker>
+        <marker id="rnarr2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#f0a05f"/>
+        </marker>
+      </defs>
+      <!-- States -->
+      <circle cx="60" cy="55" r="20" fill="none" stroke="#7c6af7" stroke-width="2"/>
+      <text x="60" y="60" text-anchor="middle" fill="#7c6af7" font-size="13" font-family="monospace">0</text>
+      <circle cx="160" cy="55" r="20" fill="none" stroke="#7c6af7" stroke-width="2"/>
+      <text x="160" y="60" text-anchor="middle" fill="#7c6af7" font-size="13" font-family="monospace">1</text>
+      <circle cx="260" cy="55" r="20" fill="none" stroke="#7c6af7" stroke-width="2"/>
+      <text x="260" y="60" text-anchor="middle" fill="#7c6af7" font-size="13" font-family="monospace">2</text>
+      <circle cx="360" cy="55" r="20" fill="none" stroke="#7c6af7" stroke-width="2"/>
+      <text x="360" y="60" text-anchor="middle" fill="#7c6af7" font-size="13" font-family="monospace">3</text>
+      <text x="430" y="60" fill="var(--muted)" font-size="18" font-family="monospace">···</text>
+      <!-- Forward arrows -->
+      <line x1="80" y1="55" x2="138" y2="55" stroke="#5fc4f0" stroke-width="1.8" marker-end="url(#rnarr)"/>
+      <line x1="180" y1="55" x2="238" y2="55" stroke="#5fc4f0" stroke-width="1.8" marker-end="url(#rnarr)"/>
+      <line x1="280" y1="55" x2="338" y2="55" stroke="#5fc4f0" stroke-width="1.8" marker-end="url(#rnarr)"/>
+      <line x1="380" y1="55" x2="415" y2="55" stroke="#5fc4f0" stroke-width="1.8" marker-end="url(#rnarr)"/>
+      <!-- Reset arcs back to 0 -->
+      <path d="M160,35 Q110,5 82,40" stroke="#f0a05f" stroke-width="1.5" fill="none" stroke-dasharray="4,2" marker-end="url(#rnarr2)"/>
+      <path d="M260,35 Q160,0 82,40" stroke="#f0a05f" stroke-width="1.5" fill="none" stroke-dasharray="4,2" marker-end="url(#rnarr2)"/>
+      <path d="M360,35 Q210,0 82,40" stroke="#f0a05f" stroke-width="1.5" fill="none" stroke-dasharray="4,2" marker-end="url(#rnarr2)"/>
+      <!-- Labels -->
+      <text x="60" y="100" text-anchor="middle" fill="var(--muted)" font-size="9" font-family="monospace">reset to 0</text>
+      <text x="109" y="50" text-anchor="middle" fill="#5fc4f0" font-size="9" font-family="monospace">1−p(0,0)</text>
+    </svg>
+    <p style="text-align:center; color:var(--muted); font-size:0.82rem; margin-top:0.25rem; font-style:italic;">
+      Renewal chain: advance or reset to 0. Dashed arrows show resets with probability p(n,0).
+    </p>
+  </div>
+
+  <p>Note: the chain is <strong>irreducible</strong> provided \(p(n, n+1) > 0\) for all \(n\) (since every state can reach every other state via state 0), but its recurrence depends on the reset probabilities.</p>
+
+  <div class="thm-box">
+    <div class="thm-title">Claim — Transience of the Renewal Chain</div>
+    <p>All states of the renewal chain are <strong>transient</strong> if and only if:
+    \[\sum_{n=0}^{\infty} p(n, 0) < \infty.\]</p>
+  </div>
+
+  <div class="proof-block">
+    <div class="proof-title">Proof Sketch</div>
+    <div class="proof-step">
+      <div class="step-num">1</div>
+      <div class="step-content">Starting at state \(k\), the chain must pass through states \(k, k+1, k+2, \ldots\) sequentially before resetting to 0. The probability of <em>never</em> resetting (i.e., \(T_0^+ = \infty\)) is:
+      \[P(T_0^+ = \infty \mid X_0 = k) = \prod_{n=k}^{\infty} p(n, n+1) = \prod_{n=k}^{\infty} (1 - p(n, 0)).\]</div>
+    </div>
+    <div class="proof-step">
+      <div class="step-num">2</div>
+      <div class="step-content"><strong>Key Fact:</strong> For \(0 \leq a_n \leq 1\):
+      \[\prod_{n=0}^{\infty}(1 - a_n) = 0 \iff \sum_{n=0}^{\infty} a_n = \infty.\]
+      (Proof: bound \(1 - x \leq e^{-x}\), so \(\prod(1-a_n) \leq e^{-\sum a_n}\). More carefully, \(\prod(1-a_n) \approx e^{-\sum a_n}\).)</div>
+    </div>
+    <div class="proof-step">
+      <div class="step-num">3</div>
+      <div class="step-content">Therefore: \(P(T_0^+ = \infty \mid X_0 = k) > 0 \iff \sum_{n \geq k} p(n,0) < \infty\). Since \(\sum_{n=0}^{\infty} p(n,0) < \infty \Rightarrow \sum_{n \geq k} p(n,0) < \infty\) for all \(k\), all states are transient.</div>
+    </div>
+    <div class="qed">■</div>
+  </div>
+
+  <div class="example-box">
+    <div class="ex-label">Example — The Harmonic Series Test</div>
+    <p>Take \(p(n,0) = \frac{1}{n+2}\). Then \(\sum_{n=0}^{\infty} p(n,0) = \frac{1}{2} + \frac{1}{3} + \frac{1}{4} + \cdots = \infty\), so \(\prod(1-p(n,0)) = \frac{1}{2} \cdot \frac{2}{3} \cdot \frac{3}{4} \cdots = 0\). Thus \(P(T_0^+ = \infty) = 0\) and all states are <strong>recurrent</strong>.</p>
+    <p>Take \(p(n,0) = \frac{1}{(n+1)^2}\). Then \(\sum p(n,0) < \infty\), so \(\prod(1-p(n,0)) > 0\), meaning \(P(T_0^+ = \infty) > 0\) and all states are <strong>transient</strong>.</p>
+  </div>
+</section>
+
+<!-- ─── SECTION 4: STATIONARY DISTRIBUTIONS ─── -->
+<section id="stationary">
+  <h2><span class="num">4</span> Stationary Distributions</h2>
+
+  <p>We now ask: <em>in the long run, how much time does the chain spend in each state?</em></p>
+
+  <h3>4.1 Definition and Motivation</h3>
+
+  <div class="def-box">
+    <div class="def-title">Definition — Visit Count</div>
+    <p>Let \(N_n(x) = \#\{m \leq n : X_m = x\}\) be the number of times the chain visits state \(x\) up to time \(n\). We ask: does the long-run fraction
+    \[\lim_{n \to \infty} \frac{N_n(x)}{n}\]
+    exist almost surely, and what does it equal?</p>
+  </div>
+
+  <div class="def-box">
+    <div class="def-title">Definition — Stationary Distribution</div>
+    <p>A probability distribution \(\pi\) on \(S\) (with \(\pi_x \geq 0\) and \(\sum_x \pi_x = 1\)) is called <strong>stationary</strong> (or <strong>invariant</strong>) for the chain if:
+    \[\pi = \pi P\]
+    i.e., written entrywise:
+    \[\pi_y = \sum_x \pi_x \, p(x, y) \quad \forall y \in S.\]</p>
+  </div>
+
+  <div class="note-box">
+    <strong>Interpretation:</strong> The equation \(\pi_y = \sum_x \pi_x p(x,y)\) says: the probability of being in state \(y\) equals the total incoming probability flow to \(y\) in one step. A stationary distribution represents a <em>balance</em> or <em>equilibrium</em>.
+  </div>
+
+  <h3>4.2 Characterisation</h3>
+
+  <div class="thm-box">
+    <div class="thm-title">Proposition — Invariance Condition</div>
+    <p>\(\pi\) is stationary if and only if: starting with \(X_0 \sim \pi\) implies \(X_n \sim \pi\) for all \(n \geq 0\).</p>
+  </div>
+
+  <p>More generally, for any initial distribution \(u_0\) (with \(P(X_0 = x) = u_0(x)\)), the distribution at time \(n\) is:
+  \[u_n = u_0 P^n, \qquad \text{i.e.,} \quad u_n(y) = \sum_x u_0(x) \, p^n(x,y).\]
+  Stationarity means \(\pi P^n = \pi\) for all \(n\).</p>
+
+  <h3>4.3 Two-State Example</h3>
+
+  <div class="example-box">
+    <div class="ex-label">Example — Two-State Markov Chain</div>
+    <p>States: \(\{a, b\}\). Transition probabilities: \(p(a, b) = p\) (prob of jumping from \(a\) to \(b\)) and \(p(b, a) = q\) (prob of jumping from \(b\) to \(a\)).</p>
+    <div style="text-align:center; margin: 1rem 0;">
+      <svg viewBox="0 0 280 110" style="max-width:280px; width:100%;">
+        <defs>
+          <marker id="tsarr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#5fc4f0"/>
+          </marker>
+        </defs>
+        <circle cx="80" cy="55" r="28" fill="rgba(124,106,247,0.2)" stroke="#7c6af7" stroke-width="2"/>
+        <text x="80" y="60" text-anchor="middle" fill="white" font-size="16" font-family="monospace">a</text>
+        <circle cx="200" cy="55" r="28" fill="rgba(95,196,240,0.2)" stroke="#5fc4f0" stroke-width="2"/>
+        <text x="200" y="60" text-anchor="middle" fill="white" font-size="16" font-family="monospace">b</text>
+        <!-- a to b -->
+        <path d="M108,45 Q140,20 172,45" stroke="#5fc4f0" stroke-width="2" fill="none" marker-end="url(#tsarr)"/>
+        <text x="140" y="24" text-anchor="middle" fill="#5fc4f0" font-size="12" font-family="monospace">p</text>
+        <!-- b to a -->
+        <path d="M172,65 Q140,90 108,65" stroke="#7c6af7" stroke-width="2" fill="none" marker-end="url(#tsarr)"/>
+        <text x="140" y="92" text-anchor="middle" fill="#7c6af7" font-size="12" font-family="monospace">q</text>
+        <!-- self-loops -->
+        <path d="M58,35 Q40,10 68,32" stroke="#7c6af7" stroke-width="1.5" fill="none" marker-end="url(#tsarr)"/>
+        <text x="38" y="20" fill="#7c6af7" font-size="11" font-family="monospace">1−p</text>
+        <path d="M212,35 Q230,10 222,32" stroke="#5fc4f0" stroke-width="1.5" fill="none" marker-end="url(#tsarr)"/>
+        <text x="222" y="20" fill="#5fc4f0" font-size="11" font-family="monospace">1−q</text>
+      </svg>
+    </div>
+    <p><strong>Find the stationary distribution \((\pi_a, \pi_b)\).</strong></p>
+    <p>The balance equation at \(a\): \(\pi_a = (1-p)\pi_a + q\pi_b\), which gives \(p\pi_a = q\pi_b\).</p>
+    <p>Normalisation: \(\pi_a + \pi_b = 1\).</p>
+    <p>Solving: \[\boxed{\pi_a = \frac{q}{p+q}, \qquad \pi_b = \frac{p}{p+q}.}\]</p>
+    <p>Intuition: if \(p\) (leaving \(a\)) is large relative to \(q\) (leaving \(b\)), the chain spends less time at \(a\).</p>
+  </div>
+
+  <!-- Interactive Calculator -->
+  <div class="stat-calc">
+    <h4>Interactive: Stationary Distribution Calculator</h4>
+    <div class="calc-row">
+      <label>p (prob a → b):</label>
+      <input type="number" id="pInput" min="0.01" max="0.99" step="0.01" value="0.40">
+    </div>
+    <div class="calc-row">
+      <label>q (prob b → a):</label>
+      <input type="number" id="qInput" min="0.01" max="0.99" step="0.01" value="0.60">
+    </div>
+    <button class="calc-btn" onclick="calcStationary()">Compute π</button>
+    <div class="bar-chart" style="margin-top:1rem;">
+      <div class="bar-wrap">
+        <div class="bar-val" id="piAVal">—</div>
+        <div class="bar" id="barPiA" style="height:40px; background:var(--accent);"></div>
+        <div class="bar-label">π(a)</div>
+      </div>
+      <div class="bar-wrap">
+        <div class="bar-val" id="piBVal">—</div>
+        <div class="bar" id="barPiB" style="height:40px; background:var(--accent2);"></div>
+        <div class="bar-label">π(b)</div>
+      </div>
+    </div>
+    <div class="stat-result" id="statResult">Enter p and q then click Compute π.</div>
+  </div>
+
+  <h3>4.4 Stationary Distributions and Recurrence</h3>
+
+  <div class="thm-box">
+    <div class="thm-title">Claim — Stationarity Implies Recurrence</div>
+    <p>If \(\pi\) is a stationary distribution with \(\pi_x > 0\), then \(x\) is <strong>recurrent</strong>.</p>
+  </div>
+
+  <div class="proof-block">
+    <div class="proof-title">Proof Idea</div>
+    <div class="proof-step">
+      <div class="step-num">1</div>
+      <div class="step-content">If \(x\) were transient, then \(N(x) = \#\{n \geq 0 : X_n = x\} < \infty\) almost surely. The number of returns has a geometric distribution with parameter \(1 - \rho_{xx}\), so:
+      \[E_x[N(x)] = \frac{1}{1 - \rho_{xx}} < \infty.\]</div>
+    </div>
+    <div class="proof-step">
+      <div class="step-num">2</div>
+      <div class="step-content">On the other hand, if \(\pi\) is stationary, one can show:
+      \[E_\pi[N_n(x)] = (n+1)\pi_x \xrightarrow{n \to \infty} \infty.\]
+      (Uses: \(E_\pi[N_n(x)] = \sum_{m=0}^n E_\pi[1(X_m = x)] = \sum_{m=0}^n \pi_x = (n+1)\pi_x\).)</div>
+    </div>
+    <div class="proof-step">
+      <div class="step-num">3</div>
+      <div class="step-content">If \(\pi_x > 0\), this expected count grows without bound, contradicting \(N(x) < \infty\) a.s. Therefore \(x\) must be recurrent.</div>
+    </div>
+    <div class="qed">■</div>
+  </div>
+
+  <div class="claims-grid">
+    <div class="claim-box">
+      <div class="claim-title">Transient States</div>
+      <p>If \(x\) is transient, then \(\pi_x = 0\) in any stationary distribution.</p>
+      <p>Intuition: transient states are visited only finitely often, so their long-run fraction is 0.</p>
+    </div>
+    <div class="claim-box">
+      <div class="claim-title">Recurrent States</div>
+      <p>If \(x\) is recurrent, then \(\pi_x \geq 0\) (could be 0 if \(|S| = \infty\)).</p>
+      <p>For finite \(S\): \(\pi_x > 0\) for all \(x\) in a recurrent class.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ─── SECTION 5: CONVERGENCE ─── -->
+<section id="convergence">
+  <h2><span class="num">5</span> Convergence Theorems</h2>
+
+  <p>When does \(p^n(x,y)\) — the probability of being at \(y\) after \(n\) steps starting from \(x\) — converge as \(n \to \infty\)? Two major results answer this.</p>
+
+  <div class="thm-box">
+    <div class="thm-title">Theorem 1 — Convergence of \(p^n\) (Ergodic Theorem)</div>
+    <p>If a Markov chain is:</p>
+    <p>(i) <strong>Irreducible</strong>: \(\forall\, x, y \in S\), \(x \to y\) and \(y \to x\),</p>
+    <p>(ii) <strong>Aperiodic</strong>: \(\gcd\{n \geq 1 : p^n(x,x) > 0\} = 1\) for all \(x\),</p>
+    <p>(iii) Has a <strong>stationary distribution</strong> \(\pi\),</p>
+    <p>then for all \(x, y \in S\):
+    \[p^n(x, y) \xrightarrow{n \to \infty} \pi(y).\]</p>
+  </div>
+
+  <div class="thm-box">
+    <div class="thm-title">Theorem 2 — Ergodic Average (Frequency of Visits)</div>
+    <p>If a Markov chain is <strong>irreducible</strong> and has a <strong>stationary distribution</strong> \(\pi\), then for all \(y \in S\) and for any initial distribution of \(X_0\):
+    \[\frac{N_n(y)}{n} \xrightarrow{n \to \infty} \pi(y) \quad \text{almost surely.}\]</p>
+  </div>
+
+  <div class="note-box">
+    <strong>Comparison:</strong> Theorem 1 is stronger (requires aperiodicity), giving convergence of the transition probabilities themselves. Theorem 2 only requires irreducibility + stationarity, giving the weaker but still powerful result that time averages converge.
+  </div>
+
+  <div class="example-box">
+    <div class="ex-label">Example — Theorem 2 Without Theorem 1</div>
+    <p>Consider the 2-state chain \(S = \{0, 1\}\) with \(p(0,1) = p(1,0) = 1\) (the chain alternates perfectly: \(0 \to 1 \to 0 \to 1 \to \cdots\)).</p>
+    <p>This chain is <em>irreducible</em> and has stationary distribution \(\pi(0) = \pi(1) = 1/2\).</p>
+    <p>However, it is <em>periodic</em> (period 2): \(p^n(0,0) = 1\) if \(n\) is even, \(0\) if \(n\) is odd. So \(p^n(0,0)\) does <em>not</em> converge — Theorem 1 fails.</p>
+    <p>But the time-average \(\frac{N_n(0)}{n} \to \frac{1}{2} = \pi(0)\) — Theorem 2 holds.</p>
+    <div style="text-align:center; margin-top:0.75rem;">
+      <svg viewBox="0 0 200 80" style="max-width:200px; width:100%;">
+        <defs>
+          <marker id="altarr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#5fc4f0"/>
+          </marker>
+        </defs>
+        <circle cx="60" cy="40" r="22" fill="rgba(124,106,247,0.2)" stroke="#7c6af7" stroke-width="2"/>
+        <text x="60" y="45" text-anchor="middle" fill="white" font-size="14" font-family="monospace">0</text>
+        <circle cx="140" cy="40" r="22" fill="rgba(95,196,240,0.2)" stroke="#5fc4f0" stroke-width="2"/>
+        <text x="140" y="45" text-anchor="middle" fill="white" font-size="14" font-family="monospace">1</text>
+        <path d="M82,30 Q100,12 118,30" stroke="#5fc4f0" stroke-width="2" fill="none" marker-end="url(#altarr)"/>
+        <text x="100" y="14" text-anchor="middle" fill="#5fc4f0" font-size="11" font-family="monospace">1</text>
+        <path d="M118,50 Q100,68 82,50" stroke="#7c6af7" stroke-width="2" fill="none" marker-end="url(#altarr)"/>
+        <text x="100" y="73" text-anchor="middle" fill="#7c6af7" font-size="11" font-family="monospace">1</text>
+      </svg>
+      <p style="color:var(--muted); font-size:0.82rem; margin-top:0.25rem;">Period-2 chain: satisfies Thm 2 but not Thm 1.</p>
+    </div>
+  </div>
+
+  <!-- Summary Table -->
+  <table style="margin-top:2rem;">
+    <thead>
+      <tr>
+        <th>Property</th>
+        <th>Theorem 1 (p^n convergence)</th>
+        <th>Theorem 2 (time averages)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Irreducible</td>
+        <td>Required</td>
+        <td>Required</td>
+      </tr>
+      <tr>
+        <td>Aperiodic</td>
+        <td>Required</td>
+        <td>Not needed</td>
+      </tr>
+      <tr>
+        <td>Stationary dist. exists</td>
+        <td>Required</td>
+        <td>Required</td>
+      </tr>
+      <tr>
+        <td>Conclusion</td>
+        <td>\(p^n(x,y) \to \pi(y)\)</td>
+        <td>\(N_n(y)/n \to \pi(y)\) a.s.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ─── SUMMARY TABLE ─── -->
+<section id="summary">
+  <h2><span class="num">6</span> Summary</h2>
+  <table>
+    <thead>
+      <tr><th>Concept</th><th>Definition / Condition</th><th>Key Insight</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Transience</strong></td>
+        <td>\(x \to y\) but \(y \not\to x\) for some \(y\)</td>
+        <td>Chain can escape \(x\) permanently; \(p_{xx} < 1\)</td>
+      </tr>
+      <tr>
+        <td><strong>Recurrence (finite S)</strong></td>
+        <td>\(x \to y \Rightarrow y \to x\) and \(|S| < \infty\)</td>
+        <td>Geometric return bound gives \(P(T_x^+ = \infty) = 0\)</td>
+      </tr>
+      <tr>
+        <td><strong>Closed Set</strong></td>
+        <td>\(\forall x \in A\): \(p(x,y)>0 \Rightarrow y \in A\)</td>
+        <td>Chain cannot leave once inside</td>
+      </tr>
+      <tr>
+        <td><strong>Irreducible Set</strong></td>
+        <td>\(\forall x,y \in A\): \(x \leftrightarrow y\)</td>
+        <td>All states communicate within \(A\)</td>
+      </tr>
+      <tr>
+        <td><strong>State Partition</strong></td>
+        <td>\(S = C_1 \cup \cdots \cup C_k \cup T\)</td>
+        <td>\(C_i\) = recurrent classes, \(T\) = transient</td>
+      </tr>
+      <tr>
+        <td><strong>Infinite State Space</strong></td>
+        <td>Closed + irreducible \(\not\Rightarrow\) recurrent</td>
+        <td>Biased random walk: all states transient</td>
+      </tr>
+      <tr>
+        <td><strong>Stationary Dist.</strong></td>
+        <td>\(\pi = \pi P\), i.e., \(\pi_y = \sum_x \pi_x p(x,y)\)</td>
+        <td>Equilibrium; preserved by dynamics</td>
+      </tr>
+      <tr>
+        <td><strong>2-State Formula</strong></td>
+        <td>\(\pi_a = q/(p+q)\), \(\pi_b = p/(p+q)\)</td>
+        <td>Inverse of rates: spend more time where you leave slowly</td>
+      </tr>
+      <tr>
+        <td><strong>Convergence (Thm 1)</strong></td>
+        <td>Irred. + aperiodic + stationary \(\pi\)</td>
+        <td>\(p^n(x,y) \to \pi(y)\) for all \(x,y\)</td>
+      </tr>
+      <tr>
+        <td><strong>Ergodic Avg (Thm 2)</strong></td>
+        <td>Irred. + stationary \(\pi\)</td>
+        <td>\(N_n(y)/n \to \pi(y)\) a.s.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ─── FLASHCARDS ─── -->
+<section id="flashcards">
+  <h2><span class="num">7</span> Flashcards</h2>
+  <p>Click a card to reveal the answer. Use the arrows to navigate.</p>
+  <div id="flashcard" class="card">
+    <div class="card-face card-front">
+      <div class="card-tag" id="fc-tag">Definition</div>
+      <div class="card-question" id="fc-q">Loading...</div>
+      <div class="card-hint">Click to flip</div>
+    </div>
+    <div class="card-face card-back">
+      <div class="card-answer" id="fc-a">...</div>
+      <div class="card-formula" id="fc-f">...</div>
+    </div>
+  </div>
+  <div class="card-controls">
+    <button class="card-btn" onclick="prevCard()">← Prev</button>
+    <span id="card-counter">1 / 10</span>
+    <button class="card-btn" onclick="nextCard()">Next →</button>
+    <button class="card-btn" onclick="shuffleCards()">Shuffle</button>
+  </div>
+  <div class="card-dots" id="card-dots"></div>
+</section>
+
+<!-- ─── BOTTOM LECTURE NAV ─── -->
+<div class="lec-nav" style="margin-top:3rem;">
+  <a href="lecture-02.html">← Lecture 2: Deeper Structure</a>
+  <a href="../index.html" class="home-btn">⌂ All Lectures</a>
+  <span class="nav-title">End of Lecture 3</span>
+</div>
+
+</div><!-- end .container -->
+
+<script src="../assets/script.js"></script>
+
+<script>
+// ── Stationary Distribution Calculator ──
+function calcStationary() {
+  const p = parseFloat(document.getElementById('pInput').value);
+  const q = parseFloat(document.getElementById('qInput').value);
+  if (isNaN(p) || isNaN(q) || p <= 0 || p >= 1 || q <= 0 || q >= 1) {
+    document.getElementById('statResult').textContent = 'Please enter p and q strictly between 0 and 1.';
+    return;
+  }
+  const piA = q / (p + q);
+  const piB = p / (p + q);
+  document.getElementById('piAVal').textContent = piA.toFixed(3);
+  document.getElementById('piBVal').textContent = piB.toFixed(3);
+  const maxH = 70;
+  document.getElementById('barPiA').style.height = (piA * maxH) + 'px';
+  document.getElementById('barPiB').style.height = (piB * maxH) + 'px';
+  document.getElementById('statResult').innerHTML =
+    `π(a) = q/(p+q) = ${q}/(${p}+${q}) = <strong>${piA.toFixed(4)}</strong><br>` +
+    `π(b) = p/(p+q) = ${p}/(${p}+${q}) = <strong>${piB.toFixed(4)}</strong>`;
+  if (typeof MathJax !== 'undefined') MathJax.typeset();
+}
+
+// ── Flashcards ──
+const cards3 = [
+  { tag:'Definition', q:'What does it mean for state x to be transient?',
+    a:'x is transient if ρ_{xx} = P_x(T_x⁺ < ∞) < 1, i.e., there is a positive probability of never returning to x.',
+    f:'ρ_{xx} < 1 ⟺ x transient' },
+  { tag:'Theorem', q:'State the transience criterion proved in Lecture 3.',
+    a:'If x → y but y ↛ x (y is reachable from x but x is not reachable from y), then x is transient. Proof: the path to y gives a positive-probability event of never returning.',
+    f:'x → y, y ↛ x ⟹ x transient' },
+  { tag:'Theorem', q:'State the recurrence criterion for finite state spaces.',
+    a:'If |S| < ∞ and for every y with x → y we also have y → x, then x is recurrent. Proof uses a geometric return bound with α = min probability of returning in N steps.',
+    f:'|S| < ∞, x → y ⟹ y → x, then x is recurrent' },
+  { tag:'Definition', q:'What is a closed set A ⊆ S?',
+    a:'A is closed if for all x ∈ A and all y with p(x,y) > 0, we have y ∈ A. Once the chain enters A, it never leaves.',
+    f:'p(x,y) > 0, x ∈ A ⟹ y ∈ A' },
+  { tag:'Theorem', q:'State the State Space Partition Theorem.',
+    a:'For any MC on S, there is a partition S = C₁ ∪ … ∪ Cₖ ∪ T where each Cᵢ is an irreducible closed set (all states recurrent) and T is the set of transient states.',
+    f:'S = C₁ ∪ ⋯ ∪ Cₖ ∪ T' },
+  { tag:'Counterexample', q:'Why does closed + irreducible not imply recurrent for infinite S?',
+    a:'For infinite S, the proof fails because N = max n(x,y) may be infinite and α = min return probability may be 0. Example: biased random walk drifts to infinity, so all states are transient despite irreducibility.',
+    f:'|S| = ∞: closed + irred. ↛ recurrent' },
+  { tag:'Definition', q:'What is a stationary distribution π?',
+    a:'π is stationary if π = πP, i.e., π_y = Σ_x π_x p(x,y) for all y. Equivalently, if X₀ ~ π then X_n ~ π for all n ≥ 0.',
+    f:'π = πP ⟺ πy = Σx πx p(x,y)' },
+  { tag:'Formula', q:'What is the stationary distribution of a 2-state Markov chain with p(a,b)=p and p(b,a)=q?',
+    a:'π(a) = q/(p+q) and π(b) = p/(p+q). Derived from pπ(a) = qπ(b) (balance) plus π(a)+π(b)=1 (normalisation).',
+    f:'π(a) = q/(p+q), π(b) = p/(p+q)' },
+  { tag:'Theorem', q:'State the Ergodic Theorem (Theorem 1) for Markov chains.',
+    a:'If a MC is irreducible, aperiodic, and has stationary distribution π, then p^n(x,y) → π(y) for all x,y as n → ∞.',
+    f:'Irred. + aperiodic + stat. π ⟹ p^n(x,y) → π(y)' },
+  { tag:'Theorem', q:'State Theorem 2 (ergodic averages) for Markov chains.',
+    a:'If a MC is irreducible and has stationary distribution π, then N_n(y)/n → π(y) almost surely as n → ∞, for any initial distribution.',
+    f:'N_n(y)/n → π(y) a.s.' },
+];
+
+let currentCard3 = 0;
+let cardOrder3 = Array.from({length: cards3.length}, (_, i) => i);
+let flipped3 = false;
+
+function renderCard3() {
+  const c = cards3[cardOrder3[currentCard3]];
+  document.getElementById('fc-tag').textContent = c.tag;
+  document.getElementById('fc-q').textContent = c.q;
+  document.getElementById('fc-a').textContent = c.a;
+  document.getElementById('fc-f').textContent = c.f;
+  document.getElementById('card-counter').textContent = `${currentCard3+1} / ${cards3.length}`;
+  const el = document.getElementById('flashcard');
+  el.classList.remove('flipped');
+  flipped3 = false;
+  renderDots3();
+  if (typeof MathJax !== 'undefined') MathJax.typeset();
+}
+
+function renderDots3() {
+  const dots = document.getElementById('card-dots');
+  dots.innerHTML = cardOrder3.map((_, i) =>
+    `<span class="dot${i===currentCard3?' active':''}" onclick="goCard3(${i})"></span>`
+  ).join('');
+}
+
+function goCard3(i) { currentCard3 = i; renderCard3(); }
+function nextCard() { currentCard3 = (currentCard3+1) % cards3.length; renderCard3(); }
+function prevCard() { currentCard3 = (currentCard3-1+cards3.length) % cards3.length; renderCard3(); }
+function shuffleCards() {
+  for (let i = cardOrder3.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [cardOrder3[i], cardOrder3[j]] = [cardOrder3[j], cardOrder3[i]];
+  }
+  currentCard3 = 0; renderCard3();
+}
+
+document.getElementById('flashcard').addEventListener('click', () => {
+  const el = document.getElementById('flashcard');
+  flipped3 = !flipped3;
+  el.classList.toggle('flipped', flipped3);
+});
+
+renderCard3();
+</script>
+
+</body>
+</html>
